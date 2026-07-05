@@ -17,15 +17,15 @@
   .min-h-screen{min-height:100vh}.max-w-3xl{max-width:48rem}.mx-auto{margin-left:auto;margin-right:auto}
   /* Tailwind-like utility subset used by the app */
 </style>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/recharts/umd/Recharts.min.js" crossorigin></script>
+<script id="lib-react" src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script id="lib-reactdom" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script id="lib-recharts" src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script id="lib-babel" src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 <div id="root">
-  <div id="boot-status" style="font-family:sans-serif;padding:24px;color:#101619;">Lade Skripte…</div>
+  <div id="boot-status" style="font-family:sans-serif;padding:24px;color:#101619;">Lade Skripte… <span id="boot-progress"></span></div>
 </div>
 <script>
   // Show any error directly on screen (no dev tools needed on iPhone)
@@ -37,18 +37,41 @@
     var el = document.getElementById('boot-status') || document.getElementById('root');
     if (el) el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">PROMISE FEHLER:\n' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</div>';
   });
-  // Check after a delay whether the CDN libraries actually loaded
-  setTimeout(function () {
-    var missing = [];
-    if (typeof React === 'undefined') missing.push('React');
-    if (typeof ReactDOM === 'undefined') missing.push('ReactDOM');
-    if (typeof Recharts === 'undefined') missing.push('Recharts');
-    if (typeof Babel === 'undefined') missing.push('Babel');
-    var el = document.getElementById('boot-status');
-    if (missing.length && el) {
-      el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">Diese Skripte konnten nicht geladen werden:\n' + missing.join(', ') + '\n\nMögliche Ursache: Internetverbindung oder CDN blockiert.</div>';
+  // Track real load/error events per script instead of guessing with a fixed timer.
+  // This works correctly even on slow mobile connections.
+  var LIBS = ['lib-react', 'lib-reactdom', 'lib-recharts', 'lib-babel'];
+  var status = {};
+  var failed = [];
+  var loadStart = Date.now();
+  function checkDone() {
+    var allSettled = LIBS.every(function (id) { return status[id]; });
+    var progressEl = document.getElementById('boot-progress');
+    if (progressEl) {
+      var doneCount = LIBS.filter(function (id) { return status[id]; }).length;
+      progressEl.textContent = '(' + doneCount + '/' + LIBS.length + ')';
     }
-  }, 4000);
+    if (allSettled) {
+      if (failed.length) {
+        var el = document.getElementById('boot-status');
+        if (el) el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">Diese Skripte konnten nicht geladen werden:\n' + failed.join(', ') + '\n\nMögliche Ursache: Internetverbindung oder CDN blockiert. Bitte Seite neu laden (evtl. mehrmals) oder später erneut versuchen.</div>';
+      }
+      // If all succeeded, the mount script further below will replace #root content.
+    }
+  }
+  LIBS.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) { status[id] = true; failed.push(id + ' (Tag fehlt)'); checkDone(); return; }
+    el.addEventListener('load', function () { status[id] = true; checkDone(); });
+    el.addEventListener('error', function () { status[id] = true; failed.push(id); checkDone(); });
+  });
+  // Absolute safety net: after 25s, if still not resolved, show a message (very slow connections)
+  setTimeout(function () {
+    var el = document.getElementById('boot-status');
+    var stillWaiting = LIBS.some(function (id) { return !status[id]; });
+    if (stillWaiting && el) {
+      el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#B27A00;background:#fff;">Das Laden dauert ungewöhnlich lange (>25s). Möglicherweise ist die Verbindung sehr langsam. Bitte warten oder Seite neu laden.</div>';
+    }
+  }, 25000);
 </script>
 <script type="text/babel" data-presets="react">
 
