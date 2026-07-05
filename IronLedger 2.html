@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Iron Ledger</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Iron Ledger" />
+<meta name="theme-color" content="#0F7B6F" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #F6F8F8; color: #101619;
+    font-family: -apple-system, system-ui, sans-serif; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 90px; }
+  header { padding: 24px 0 12px; border-bottom: 1px solid #E2E8E9; display: flex; align-items: center; gap: 12px; }
+  .icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(160deg,#0F7B6F,#0A5A51);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 18px; }
+  h1 { font-size: 20px; margin: 0; text-transform: uppercase; letter-spacing: .04em; }
+  .sub { font-size: 12px; color: #67757B; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #67757B; margin: 24px 0 8px; }
+  .card { background: #fff; border: 1px solid #E2E8E9; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  label { display: block; font-size: 13px; color: #67757B; margin: 10px 0 4px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid #E2E8E9; border-radius: 8px;
+    font-size: 15px; background: #fff; color: #101619; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .slider-val { float: right; font-family: ui-monospace, monospace; color: #0F7B6F; font-weight: 600; }
+  input[type=range] { -webkit-appearance: none; background: transparent; padding: 0; }
+  input[type=range]::-webkit-slider-runnable-track { height: 3px; background: #E2E8E9; border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 4px;
+    background: #0F7B6F; margin-top: -8px; }
+  button { width: 100%; padding: 13px; border: none; border-radius: 8px; background: #0F7B6F; color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; }
+  button:active { background: #0C665C; }
+  button.ghost { background: #fff; color: #0F7B6F; border: 1px solid #0F7B6F; }
+  button.small { width: auto; padding: 8px 14px; font-size: 13px; }
+  .stat { display: inline-block; background: #fff; border: 1px solid #E2E8E9; border-radius: 8px;
+    padding: 8px 4px; text-align: center; }
+  .stat .n { font-family: ui-monospace, monospace; font-size: 17px; font-weight: 600; }
+  .stat .l { font-size: 10px; color: #67757B; text-transform: uppercase; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+  .ex { border: 1px solid #E2E8E9; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .ex .nm { font-weight: 600; font-size: 14px; }
+  .ex .meta { font-size: 12px; color: #67757B; margin-top: 2px; }
+  .ex .note { font-size: 12px; color: #67757B; font-style: italic; margin-top: 4px; }
+  .setrow { display: grid; grid-template-columns: 28px 1fr 1fr 1fr; gap: 6px; align-items: center; margin-top: 6px; }
+  .setrow span { font-size: 12px; color: #67757B; font-family: ui-monospace, monospace; }
+  .setrow input { padding: 7px; font-size: 13px; }
+  nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8E9;
+    display: flex; }
+  nav button { background: none; color: #67757B; border-radius: 0; padding: 12px 4px; font-size: 11px; font-weight: 500; }
+  nav button.active { color: #0F7B6F; }
+  .flash { position: fixed; bottom: 70px; left: 16px; right: 16px; background: #0F7B6F; color: #fff;
+    padding: 12px; border-radius: 8px; text-align: center; font-size: 14px; z-index: 100; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #E2E8E9; }
+  th { color: #67757B; font-weight: 500; font-size: 11px; text-transform: uppercase; background: #F0F4F4; }
+  td.n { font-family: ui-monospace, monospace; text-align: right; }
+  .warn { background: #fff; border: 1px solid rgba(192,57,43,.4); color: #C0392B; padding: 12px;
+    border-radius: 8px; font-size: 13px; margin-top: 10px; }
+  .muted { color: #67757B; font-size: 12px; }
+  .painblock { border: 1px solid #E2E8E9; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .painblock .t { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  svg { display: block; width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">Lädt…</div>
+<nav id="nav"></nav>
+<div id="flash"></div>
+
+<script>
+"use strict";
+
+/* ---------- storage (dual: localStorage + IndexedDB fallback is overkill; localStorage is reliable here) ---------- */
+function save(key, val) {
+  try { localStorage.setItem("il_" + key, JSON.stringify(val)); return true; }
+  catch (e) { alert("Speichern fehlgeschlagen: " + e.message); return false; }
+}
+function load(key, fallback) {
+  try { var v = localStorage.getItem("il_" + key); return v ? JSON.parse(v) : fallback; }
+  catch (e) { return fallback; }
+}
+
+/* ---------- date ---------- */
+function today() {
+  var d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+function round25(x) { return Math.round(x / 2.5) * 2.5; }
+
+/* ---------- state ---------- */
+var profile = load("profile", null);
+var settings = load("settings", { dayIndex: 0 });
+var checkinToday = load("checkin_" + today(), null);
+var workoutToday = load("workout_" + today(), null);
+var trend = load("trend", { bw: [], e1rm: {}, pain: [], logins: [] });
+var tab = "today";
+
+/* ---------- training templates ---------- */
+var SESSIONS = [
+  { id: "A", label: "Unterkörper – Zug", slots: ["hinge", "squat", "core"] },
+  { id: "B", label: "Oberkörper – Push/Pull", slots: ["push", "row", "pull", "neck"] },
+  { id: "C", label: "Unterkörper – Druck", slots: ["squat", "hinge", "core"] },
+  { id: "D", label: "Oberkörper – Pull-Fokus", slots: ["pull", "row", "pushlight", "neck"] }
+];
+
+function pickSquat(kneePain) {
+  if (kneePain >= 6) return { pat: "squat", nm: "Spanish Squat (isometrisch)", type: "iso", sets: 5, sec: 45, note: "Isometrie wirkt bei Patellasehnen-Reizung oft schmerzdämpfend. Schmerz beim Halten max. 3/10." };
+  if (kneePain >= 3) return { pat: "squat", nm: "Beinpresse (ROM < 90°)", type: "reps", sets: 3, reps: 8, rpe: 7, note: "Tiefe begrenzen, kein Schmerz über 3/10." };
+  return { pat: "squat", nm: "Kniebeuge (High-Bar)", type: "reps", sets: 4, reps: 5, rpe: 8 };
+}
+function pickHinge(kneePain) {
+  return { pat: "hinge", nm: "Kreuzheben", type: "reps", sets: 4, reps: 5, rpe: kneePain >= 6 ? 7 : 8, note: "Prioritätslift – hier läuft die Progression." };
+}
+function pickPush(shPain, light) {
+  if (shPain >= 6) return { pat: "push", nm: "Cable Press (neutral, tief)", type: "reps", sets: light ? 2 : 3, reps: 10, rpe: light ? 5 : 6, note: "Ellbogen nah, minimale Schulterdach-Beteiligung." };
+  if (shPain >= 3) return { pat: "push", nm: "Floor Press (neutral)", type: "reps", sets: light ? 2 : 3, reps: 8, rpe: light ? 5 : 7 };
+  return { pat: "push", nm: light ? "Bankdrücken – leicht" : "Bankdrücken", type: "reps", sets: light ? 2 : 4, reps: light ? 6 : 5, rpe: light ? 5 : 8 };
+}
+var FIXED = {
+  row: { pat: "row", nm: "Rudern / Kabelzug eng", type: "reps", sets: 3, reps: 10, rpe: 7 },
+  pull: { pat: "pull", nm: "Latzug (neutral)", type: "reps", sets: 3, reps: 10, rpe: 7 },
+  neck: { pat: "neck", nm: "Nacken-Isometrie (4-Wege)", type: "iso", sets: 3, sec: 25, note: "Isometrie hilft gegen Steifheit." },
+  core: { pat: "core", nm: "Pallof Press", type: "reps", sets: 3, reps: 12, rpe: 6 }
+};
+
+/* ---------- periodization (mesocycle, autoregulated) ---------- */
+var MESO_WEEKS = [
+  { phase: "Akkumulation 1", rpeCap: 7, volMult: 1.0 },
+  { phase: "Akkumulation 2", rpeCap: 8, volMult: 1.1 },
+  { phase: "Intensivierung 1", rpeCap: 8.5, volMult: 1.0 },
+  { phase: "Intensivierung 2", rpeCap: 9, volMult: 0.9 },
+  { phase: "Deload", rpeCap: 6, volMult: 0.55 }
+];
+function meso() {
+  var done = (trend && trend.sessions ? trend.sessions.length : 0);
+  var weekAbs = Math.floor(done / 4);
+  var wk = ((weekAbs % MESO_WEEKS.length) + MESO_WEEKS.length) % MESO_WEEKS.length;
+  var block = Math.floor(weekAbs / MESO_WEEKS.length) + 1;
+  var m = MESO_WEEKS[wk] || MESO_WEEKS[0];
+  return { phase: m.phase, rpeCap: m.rpeCap, volMult: m.volMult, week: wk + 1, block: block };
+}
+
+/* ---------- strength standards (kg) for percentile bands, ~82kg male bodyweight ---------- */
+/* Rough population 1RM standards; used only for a self-orientation percentile. */
+var STANDARDS = {
+  squat:  { beginner: 60, novice: 90, intermediate: 125, advanced: 165, elite: 205 },
+  hinge:  { beginner: 80, novice: 115, intermediate: 155, advanced: 200, elite: 245 },
+  push:   { beginner: 45, novice: 65, intermediate: 90, advanced: 120, elite: 150 }
+};
+var LEVEL_NAMES = ["Anfänger", "Fortgeschritten", "Mittel", "Gut", "Elite"];
+function percentileFor(pat, e1rm) {
+  if (e1rm == null) return null;
+  var s = STANDARDS[pat];
+  // map the 5 standards to approx population percentiles
+  var pts = [[s.beginner, 5], [s.novice, 20], [s.intermediate, 50], [s.advanced, 80], [s.elite, 95]];
+  if (e1rm <= pts[0][0]) return Math.max(1, Math.round(e1rm / pts[0][0] * 5));
+  if (e1rm >= pts[4][0]) return 99;
+  for (var i = 0; i < pts.length - 1; i++) {
+    if (e1rm >= pts[i][0] && e1rm <= pts[i + 1][0]) {
+      var t = (e1rm - pts[i][0]) / (pts[i + 1][0] - pts[i][0]);
+      return Math.round(pts[i][1] + t * (pts[i + 1][1] - pts[i][1]));
+    }
+  }
+  return 50;
+}
+function levelFor(pat, e1rm) {
+  if (e1rm == null) return "–";
+  var s = STANDARDS[pat];
+  if (e1rm < s.novice) return "Anfänger";
+  if (e1rm < s.intermediate) return "Fortgeschritten";
+  if (e1rm < s.advanced) return "Mittel";
+  if (e1rm < s.elite) return "Gut";
+  return "Elite";
+}
+
+/* ---------- monthly gain rate per lift (kg/month) ---------- */
+function gainRate(pat) {
+  var arr = (trend.e1rm && trend.e1rm[pat]) || [];
+  if (arr.length < 2) return null;
+  var first = arr[0], last = arr[arr.length - 1];
+  var days = (new Date(last.date) - new Date(first.date)) / 86400000;
+  if (days < 1) return null;
+  return { week: (last.v - first.v) / days * 7, month: (last.v - first.v) / days * 30, total: last.v - first.v, days: Math.round(days) };
+}
+
+/* ---------- estimated lean mass gain ---------- */
+function leanGain() {
+  var sessions = (trend.sessions || []).length;
+  var consistency = Math.min(1, sessions / 12);
+  var monthly = 0.7 * consistency;
+  var bwTrend = null;
+  if (trend.bw && trend.bw.length >= 4) {
+    var s = trend.bw.slice(), n = s.length;
+    var half = Math.floor(n / 2);
+    var avgOld = s.slice(0, half).reduce(function (a, b) { return a + b.v; }, 0) / half;
+    var avgNew = s.slice(half).reduce(function (a, b) { return a + b.v; }, 0) / (n - half);
+    var spanDays = (new Date(s[n - 1].date) - new Date(s[0].date)) / 86400000;
+    if (spanDays >= 6) bwTrend = (avgNew - avgOld) / (spanDays / 2) * 7;
+  }
+  if (bwTrend != null) {
+    if (bwTrend <= 0) monthly *= 0.35;
+    else if (bwTrend < 0.1) monthly *= 0.7;
+    else if (bwTrend > 0.5) monthly *= 0.85;
+  }
+  var days = sessions * 7 / 4;
+  return { monthly: monthly, cumulative: monthly / 30 * days };
+}
+
+function e1rmFor(pat) {
+  var arr = (trend.e1rm && trend.e1rm[pat]) || [];
+  return arr.length ? arr[arr.length - 1].v : null;
+}
+function recWeight(ex) {
+  if (ex.type !== "reps") return null;
+  var e = e1rmFor(ex.pat);
+  if (!e) return null;
+  var rir = 10 - ex.rpe;
+  return round25(e / (1 + (ex.reps + rir) * 0.0333));
+}
+
+function buildWorkout(c, forceDayIndex) {
+  var di = (forceDayIndex != null) ? forceDayIndex : settings.dayIndex;
+  var tmpl = SESSIONS[di % SESSIONS.length];
+  var kp = c ? c.kneeLoad : 0, sp = c ? c.shLoad : 0;
+  var m = meso();
+  var r = readiness(c);
+  var exs = tmpl.slots.map(function (slot) {
+    var ex;
+    if (slot === "squat") ex = pickSquat(kp);
+    else if (slot === "hinge") ex = pickHinge(kp);
+    else if (slot === "push") ex = pickPush(sp, false);
+    else if (slot === "pushlight") ex = pickPush(sp, true);
+    else ex = Object.assign({}, FIXED[slot]);
+    // periodization: volume + rpe cap
+    if (ex.type === "reps") {
+      ex.sets = Math.max(1, Math.round(ex.sets * m.volMult));
+      if (ex.rpe > m.rpeCap) ex.rpe = m.rpeCap;
+      // readiness damping
+      if (r != null && r < 45) { ex.sets = Math.max(2, ex.sets - 1); ex.rpe = Math.max(5, ex.rpe - 2); ex.damped = true; }
+      else if (r != null && r < 60) { ex.rpe = Math.max(5, ex.rpe - 1); ex.damped = true; }
+    }
+    ex.rec = recWeight(ex);
+    return ex;
+  });
+  // rehab additions
+  var rehab = [];
+  if (c) {
+    var shMax = Math.max(c.shRest, c.shLoad), knMax = Math.max(c.knRest, c.kneeLoad), nkMax = Math.max(c.nkRest, c.nkLoad);
+    if (shMax >= 3) rehab.push({ pat: "reh_sh", nm: "Reha: Außenrotation Band", type: "reps", sets: 3, reps: 15, rpe: 5, rehab: true });
+    if (knMax >= 3) rehab.push({ pat: "reh_kn", nm: "Reha: Slant-Board Wall Sit", type: "iso", sets: 3, sec: 30, rehab: true });
+    if (nkMax >= 3) rehab.push({ pat: "reh_nk", nm: "Reha: Chin Tucks", type: "iso", sets: 3, sec: 15, rehab: true });
+  }
+  return { date: today(), dayIndex: di, dayId: tmpl.id, label: tmpl.label, meso: meso(), readiness: readiness(c), exercises: exs.concat(rehab) };
+}
+
+/* ---------- nutrition ---------- */
+function nutrition() {
+  if (!profile) return null;
+  var lean = profile.weightKg * (1 - profile.bf / 100);
+  var bmr = 370 + 21.6 * lean;
+  var tdee = bmr * profile.act;
+  var rate = { conservative: 0.12, moderate: 0.22, aggressive: 0.4 }[profile.rate || "moderate"];
+  var surplus = Math.round((rate / 100 * profile.weightKg * 7700) / 7);
+  var cal = profile.manualCal || Math.round(tdee + surplus);
+  var p = Math.round(profile.weightKg * 2.2), f = Math.round(profile.weightKg * 0.9);
+  var c = Math.max(0, Math.round((cal - p * 4 - f * 9) / 4));
+  return { tdee: Math.round(tdee), cal: cal, p: p, f: f, c: c };
+}
+
+/* ---------- readiness ---------- */
+function readiness(c) {
+  if (!c) return null;
+  var s = Math.min(1, c.sleep / 8) * 100 * 0.3;
+  s += ((5 - c.stress) / 4) * 100 * 0.2;
+  var pain = (c.shLoad + c.kneeLoad + c.nkLoad) / 3;
+  s += ((10 - pain) / 10) * 100 * 0.5;
+  return Math.round(Math.max(0, Math.min(100, s)));
+}
+
+/* ---------- streak ---------- */
+function streak() {
+  var set = {}; (trend.logins || []).forEach(function (d) { set[d] = 1; });
+  var cur = 0, d = new Date(today());
+  while (set[new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)]) {
+    cur++; d.setDate(d.getDate() - 1);
+  }
+  return cur;
+}
+
+/* ---------- render helpers ---------- */
+function el(html) { var d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; }
+function flash(msg) {
+  var f = document.getElementById("flash");
+  f.innerHTML = '<div class="flash">' + msg + '</div>';
+  setTimeout(function () { f.innerHTML = ""; }, 2000);
+}
+
+/* ---------- simple SVG line chart ---------- */
+function lineChart(values, labels, color) {
+  color = color || "#0F7B6F";
+  var W = 320, H = 150, pad = 30;
+  if (!values.length) return '<div class="muted">Noch keine Daten.</div>';
+  var mn = Math.min.apply(null, values), mx = Math.max.apply(null, values);
+  if (mn === mx) { mn -= 1; mx += 1; }
+  var n = values.length;
+  var px = function (i) { return pad + (n <= 1 ? 0 : i * (W - pad - 10) / (n - 1)); };
+  var py = function (v) { return 10 + (H - 30 - 10) - ((v - mn) / (mx - mn)) * (H - 30 - 10); };
+  var pts = values.map(function (v, i) { return px(i) + "," + py(v); }).join(" ");
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+  for (var g = 0; g <= 3; g++) {
+    var yy = 10 + g * (H - 30 - 10) / 3;
+    var val = mx - g * (mx - mn) / 3;
+    svg += '<line x1="' + pad + '" y1="' + yy + '" x2="' + (W - 10) + '" y2="' + yy + '" stroke="#E2E8E9"/>';
+    svg += '<text x="' + (pad - 4) + '" y="' + (yy + 3) + '" font-size="9" fill="#67757B" text-anchor="end">' + (Math.round(val * 10) / 10) + '</text>';
+  }
+  svg += '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="2"/>';
+  values.forEach(function (v, i) { svg += '<circle cx="' + px(i) + '" cy="' + py(v) + '" r="2.5" fill="' + color + '"/>'; });
+  svg += '</svg>';
+  return svg;
+}
+
+/* ---------- SETUP ---------- */
+function renderSetup() {
+  var app = document.getElementById("app");
+  app.innerHTML =
+    '<header><div class="icon">IL</div><div><h1>Iron Ledger</h1><div class="sub">Einmalige Einrichtung</div></div></header>' +
+    '<div class="card">' +
+    '<label>Körpergewicht (kg)</label><input id="s_w" type="number" value="81.5" />' +
+    '<label>Körperfett (%)</label><input id="s_bf" type="number" value="11.3" />' +
+    '<label>Aktivität außerhalb Training</label><select id="s_act"><option value="1.4">Sitzend</option><option value="1.55" selected>Moderat</option><option value="1.7">Sehr aktiv</option></select>' +
+    '<label>Ziel-Zunahmerate</label><select id="s_rate"><option value="conservative">Konservativ (min. Fett)</option><option value="moderate" selected>Moderat</option><option value="aggressive">Ambitioniert</option></select>' +
+    '<div style="height:12px"></div><button onclick="saveSetup()">Profil speichern</button>' +
+    '</div>';
+  document.getElementById("nav").innerHTML = "";
+}
+window.saveSetup = function () {
+  profile = {
+    weightKg: parseFloat(document.getElementById("s_w").value) || 81.5,
+    bf: parseFloat(document.getElementById("s_bf").value) || 11.3,
+    act: parseFloat(document.getElementById("s_act").value),
+    rate: document.getElementById("s_rate").value,
+    manualCal: null
+  };
+  save("profile", profile);
+  flash("Profil gespeichert");
+  render();
+};
+
+/* ---------- CHECK-IN ---------- */
+function slider(id, label, min, max, val, accent) {
+  return '<label>' + label + '<span class="slider-val" id="v_' + id + '" style="color:' + (accent || '#0F7B6F') + '">' + val + '</span></label>' +
+    '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" value="' + val + '" step="1" ' +
+    'oninput="document.getElementById(\'v_' + id + '\').textContent=this.value" />';
+}
+function renderCheckinForm() {
+  var app = document.getElementById("app");
+  app.innerHTML =
+    headerHtml() +
+    '<h2>Morgen-Check-in</h2><div class="card">' +
+    slider("c_sleep", "Schlaf (Std)", 3, 10, 7) +
+    slider("c_stress", "Stress", 1, 5, 3) +
+    '<label>Körpergewicht heute (kg)</label><input id="c_bw" type="number" placeholder="optional" />' +
+    '</div>' +
+    '<h2>Schmerz – Ruhe & Belastung (0–10)</h2>' +
+    painBlock("Schulter", "sh") + painBlock("Knie", "kn") + painBlock("Nacken", "nk") +
+    '<div style="height:8px"></div><button onclick="submitCheckin()">Check-in abschließen</button>';
+  navHtml();
+}
+function painBlock(name, key) {
+  return '<div class="painblock"><div class="t">' + name + '</div>' +
+    slider(key + "_rest", "in Ruhe", 0, 10, 0, "#67757B") +
+    slider(key + "_load", "unter Belastung", 0, 10, 0, "#C0392B") + '</div>';
+}
+window.submitCheckin = function () {
+  var g = function (id) { return parseInt(document.getElementById(id).value, 10); };
+  checkinToday = {
+    date: today(), sleep: g("c_sleep"), stress: g("c_stress"),
+    shRest: g("sh_rest"), shLoad: g("sh_load"),
+    knRest: g("kn_rest"), kneeLoad: g("kn_load"),
+    nkRest: g("nk_rest"), nkLoad: g("nk_load")
+  };
+  var bw = parseFloat(document.getElementById("c_bw").value);
+  save("checkin_" + today(), checkinToday);
+  if (bw > 0) { trend.bw.push({ date: today(), v: bw }); }
+  trend.pain.push({ date: today(), sh: checkinToday.shLoad, kn: checkinToday.kneeLoad, nk: checkinToday.nkLoad });
+  if ((trend.logins || []).indexOf(today()) < 0) { trend.logins = trend.logins || []; trend.logins.push(today()); }
+  save("trend", trend);
+  workoutToday = buildWorkout(checkinToday);
+  save("workout_" + today(), workoutToday);
+  flash("Check-in gespeichert");
+  render();
+};
+
+/* ---------- TODAY ---------- */
+function headerHtml() {
+  return '<header><div class="icon">IL</div><div><h1>Iron Ledger</h1><div class="sub">' +
+    new Date().toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" }) +
+    '</div></div></header>';
+}
+function renderToday() {
+  if (!checkinToday) { renderCheckinForm(); return; }
+  // upgrade old saved workout (from previous app version) so new fields exist
+  if (workoutToday && !workoutToday.meso) {
+    workoutToday = buildWorkout(checkinToday, workoutToday.dayIndex);
+    save("workout_" + today(), workoutToday);
+  }
+  if (!workoutToday) {
+    workoutToday = buildWorkout(checkinToday);
+    save("workout_" + today(), workoutToday);
+  }
+  var app = document.getElementById("app");
+  var n = nutrition();
+  var r = readiness(checkinToday);
+  var html = headerHtml();
+  html += '<div class="card" style="display:flex;justify-content:space-between;align-items:center">' +
+    '<div><div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:600;color:#0F7B6F">' + streak() + ' Tage</div>' +
+    '<div class="muted">Login-Streak</div></div>' +
+    '<div style="text-align:right"><div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:600;color:' +
+    (r < 45 ? '#C0392B' : r < 65 ? '#B27A00' : '#0F7B6F') + '">' + r + '</div><div class="muted">Readiness</div></div></div>';
+
+  html += '<h2>Ernährung heute</h2><div class="grid4">' +
+    '<div class="stat"><div class="n">' + n.cal + '</div><div class="l">kcal</div></div>' +
+    '<div class="stat"><div class="n">' + n.p + 'g</div><div class="l">Protein</div></div>' +
+    '<div class="stat"><div class="n">' + n.f + 'g</div><div class="l">Fett</div></div>' +
+    '<div class="stat"><div class="n">' + n.c + 'g</div><div class="l">Carbs</div></div></div>';
+  html += '<div class="muted" style="margin-top:6px">TDEE ≈ ' + n.tdee + ' kcal</div>';
+
+  // muscle gain estimate
+  var lg = leanGain();
+  html += '<h2>Geschätzter Muskelmasse-Zuwachs</h2><div class="card">' +
+    '<div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:600;color:#0F7B6F">≈ ' + lg.cumulative.toFixed(2) + ' kg</div>' +
+    '<div class="muted">kumuliert · aktuell ≈ ' + lg.monthly.toFixed(2) + ' kg/Monat. Schätzung, keine Messung.</div></div>';
+
+  // periodization + manual day switch (bulletproof against old/missing data)
+  var m = (workoutToday && workoutToday.meso) ? workoutToday.meso : meso();
+  if (!m || m.block == null) m = { phase: "Akkumulation 1", rpeCap: 7, volMult: 1.0, week: 1, block: 1 };
+  html += '<h2>Training – ' + workoutToday.label + '</h2>';
+  html += '<div class="card" style="padding:10px"><div class="muted">Mesozyklus Block ' + m.block + ' · Woche ' + m.week + '/5 · <b style="color:#101619">' + m.phase + '</b> (RPE-Cap ' + m.rpeCap + ', Vol ×' + m.volMult + ')</div>';
+  if (workoutToday.exercises.some(function (e) { return e.damped; })) html += '<div class="muted" style="color:#B27A00;margin-top:4px">Niedrige Readiness – Belastung heute automatisch reduziert.</div>';
+  html += '<div style="margin-top:8px"><span class="muted">Einheit manuell wählen: </span>';
+  SESSIONS.forEach(function (s, i) {
+    html += '<button class="small" style="width:auto;display:inline-block;margin:2px;' + (workoutToday.dayIndex === i ? '' : 'background:#fff;color:#0F7B6F;border:1px solid #0F7B6F') + '" onclick="switchDay(' + i + ')">' + s.id + '</button>';
+  });
+  html += '</div></div>';
+
+  workoutToday.exercises.forEach(function (ex) {
+    html += '<div class="ex"><div class="nm">' + (ex.rehab ? '🩹 ' : '') + ex.nm +
+      (ex.rec ? '<span style="float:right;font-family:ui-monospace,monospace;color:#0F7B6F">' + ex.rec + ' kg</span>' : '') + '</div>' +
+      '<div class="meta">' + (ex.type === "reps" ? ex.sets + " × " + ex.reps + " @ RPE " + ex.rpe + (ex.damped ? " ↓" : "") : ex.sets + " × " + ex.sec + "s Halten") + '</div>' +
+      (ex.note ? '<div class="note">' + ex.note + '</div>' : '') + '</div>';
+  });
+
+  // daily checklist
+  var cl = load("checklist_" + today(), { cal: false, macro: false, trained: false, weighed: false });
+  var items = [["cal", "Kalorien getroffen"], ["macro", "Makros getroffen"], ["trained", "Einheit trainiert"], ["weighed", "Gewogen"]];
+  var doneN = items.filter(function (it) { return cl[it[0]]; }).length;
+  html += '<h2>Tages-Checkliste</h2><div class="card">';
+  items.forEach(function (it) {
+    html += '<div onclick="toggleCheck(\'' + it[0] + '\')" style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer">' +
+      '<span style="width:22px;height:22px;border-radius:5px;border:1.5px solid ' + (cl[it[0]] ? '#0F7B6F' : '#C4CED1') + ';background:' + (cl[it[0]] ? '#0F7B6F' : 'transparent') + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">' + (cl[it[0]] ? '✓' : '') + '</span>' +
+      '<span style="' + (cl[it[0]] ? 'color:#67757B;text-decoration:line-through' : '') + '">' + it[1] + '</span></div>';
+  });
+  if (doneN === 4) html += '<div style="color:#0F7B6F;font-weight:600;margin-top:6px">Alles erledigt – perfekter Tag!</div>';
+  else html += '<div class="muted" style="margin-top:6px">' + doneN + '/4 erledigt</div>';
+  html += '</div>';
+
+  if (checkinToday.shRest >= 5 || checkinToday.knRest >= 5 || checkinToday.nkRest >= 5) {
+    html += '<div class="warn">Schmerz ≥5/10 auch in Ruhe – bitte ärztlich/physiotherapeutisch abklären lassen. Die App steuert Belastung, ersetzt aber keine Diagnose.</div>';
+  }
+  app.innerHTML = html;
+  navHtml();
+}
+window.switchDay = function (i) {
+  workoutToday = buildWorkout(checkinToday, i);
+  workoutToday.done = false;
+  settings.dayIndex = i;
+  save("settings", settings);
+  save("workout_" + today(), workoutToday);
+  flash("Einheit " + SESSIONS[i].id + " gewählt");
+  render();
+};
+window.toggleCheck = function (key) {
+  var cl = load("checklist_" + today(), { cal: false, macro: false, trained: false, weighed: false });
+  cl[key] = !cl[key];
+  save("checklist_" + today(), cl);
+  render();
+};
+
+/* ---------- LOG ---------- */
+function renderLog() {
+  if (!workoutToday) { var a = document.getElementById("app"); a.innerHTML = headerHtml() + '<div class="card muted">Mach zuerst das Check-in im Tab „Heute".</div>'; navHtml(); return; }
+  var app = document.getElementById("app");
+  var html = headerHtml() + '<h2>Eintragen – ' + workoutToday.label + '</h2>';
+  workoutToday.exercises.forEach(function (ex, ei) {
+    html += '<div class="ex"><div class="nm">' + (ex.rehab ? '🩹 ' : '') + ex.nm + '</div>';
+    var saved = ex.logged || [];
+    for (var i = 0; i < ex.sets; i++) {
+      var s = saved[i] || {};
+      if (ex.type === "reps") {
+        html += '<div class="setrow"><span>S' + (i + 1) + '</span>' +
+          '<input type="number" placeholder="kg" value="' + (s.w != null ? s.w : (ex.rec || "")) + '" id="l_' + ei + '_' + i + '_w"/>' +
+          '<input type="number" placeholder="Wdh" value="' + (s.r != null ? s.r : ex.reps) + '" id="l_' + ei + '_' + i + '_r"/>' +
+          '<input type="number" placeholder="RPE" value="' + (s.rpe != null ? s.rpe : ex.rpe) + '" id="l_' + ei + '_' + i + '_rpe"/></div>';
+      } else {
+        html += '<div class="setrow"><span>S' + (i + 1) + '</span>' +
+          '<input type="number" placeholder="Sek" value="' + (s.sec != null ? s.sec : ex.sec) + '" id="l_' + ei + '_' + i + '_sec"/>' +
+          '<input type="number" placeholder="Schmerz" value="' + (s.pain != null ? s.pain : "") + '" id="l_' + ei + '_' + i + '_pain"/><span></span></div>';
+      }
+    }
+    html += '</div>';
+  });
+  html += '<label>Gesamt-RPE der Einheit</label>' + '<input type="number" id="l_sessionrpe" placeholder="1-10" value="' + (workoutToday.sessionRpe || 7) + '"/>' +
+    '<div style="height:10px"></div>' +
+    (workoutToday.done ? '<div class="muted">✓ Einheit gespeichert.</div>' : '<button onclick="finishWorkout()">Einheit abschließen & speichern</button>');
+  app.innerHTML = html;
+  navHtml();
+}
+window.finishWorkout = function () {
+  workoutToday.exercises.forEach(function (ex, ei) {
+    var sets = [];
+    for (var i = 0; i < ex.sets; i++) {
+      if (ex.type === "reps") {
+        var w = parseFloat(v("l_" + ei + "_" + i + "_w")), r = parseInt(v("l_" + ei + "_" + i + "_r"), 10), rp = parseFloat(v("l_" + ei + "_" + i + "_rpe"));
+        sets.push({ w: w, r: r, rpe: rp });
+      } else {
+        sets.push({ sec: parseInt(v("l_" + ei + "_" + i + "_sec"), 10), pain: parseFloat(v("l_" + ei + "_" + i + "_pain")) });
+      }
+    }
+    ex.logged = sets;
+    // update e1rm for reps
+    if (ex.type === "reps" && !ex.rehab) {
+      var best = null;
+      sets.forEach(function (s) {
+        if (s.w > 0 && s.r > 0) {
+          var e = s.w * (1 + (s.r + (10 - (s.rpe || 8))) * 0.0333);
+          if (!best || e > best) best = e;
+        }
+      });
+      if (best) {
+        trend.e1rm = trend.e1rm || {};
+        trend.e1rm[ex.pat] = trend.e1rm[ex.pat] || [];
+        trend.e1rm[ex.pat].push({ date: today(), v: round25(best) });
+      }
+    }
+  });
+  workoutToday.sessionRpe = parseFloat(v("l_sessionrpe")) || 7;
+  workoutToday.done = true;
+  save("workout_" + today(), workoutToday);
+  // record session for mesocycle + checklist
+  trend.sessions = trend.sessions || [];
+  trend.sessions.push({ date: today(), rpe: workoutToday.sessionRpe, dayId: workoutToday.dayId });
+  save("trend", trend);
+  // mark checklist trained
+  var cl = load("checklist_" + today(), {});
+  cl.trained = true; save("checklist_" + today(), cl);
+  // advance to next day AND immediately build the next session so it shows right away
+  settings.dayIndex = (settings.dayIndex + 1) % SESSIONS.length;
+  save("settings", settings);
+  workoutToday = buildWorkout(checkinToday);
+  workoutToday.done = false;
+  save("workout_" + today(), workoutToday);
+  flash("Einheit gespeichert – nächste Einheit ist bereit");
+  tab = "today";
+  render();
+};
+function v(id) { var e = document.getElementById(id); return e ? e.value : ""; }
+
+/* ---------- PROGRESS ---------- */
+function renderProgress() {
+  var app = document.getElementById("app");
+  var html = headerHtml();
+
+  var lifts = [["squat", "Kniebeuge"], ["hinge", "Kreuzheben"], ["push", "Bankdrücken"]];
+
+  // 1RM table
+  html += '<h2>1RM-Verlauf (Big Three)</h2><div class="card"><table><tr><th>Lift</th><th>Start</th><th>Aktuell</th><th>Δ</th></tr>';
+  lifts.forEach(function (p) {
+    var arr = (trend.e1rm && trend.e1rm[p[0]]) || [];
+    var first = arr.length ? arr[0].v : null, cur = arr.length ? arr[arr.length - 1].v : null;
+    var d = (first != null && cur != null) ? (cur - first) : null;
+    html += '<tr><td>' + p[1] + '</td><td class="n">' + (first != null ? first + " kg" : "–") + '</td>' +
+      '<td class="n">' + (cur != null ? cur + " kg" : "–") + '</td>' +
+      '<td class="n" style="color:' + (d == null ? '#67757B' : d >= 0 ? '#0F7B6F' : '#C0392B') + '">' + (d != null ? (d >= 0 ? "+" : "") + d.toFixed(1) : "–") + '</td></tr>';
+  });
+  html += '</table></div>';
+
+  // Niveau + Perzentil per lift (the "Glockenkurve")
+  html += '<h2>Niveau & Perzentil (wo du stehst)</h2>';
+  lifts.forEach(function (p) {
+    var cur = e1rmFor(p[0]);
+    var lvl = levelFor(p[0], cur);
+    var pct = percentileFor(p[0], cur);
+    var s = STANDARDS[p[0]];
+    html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<b>' + p[1] + '</b><span class="muted">' + (cur != null ? cur + ' kg' : 'noch keine Daten') + '</span></div>';
+    if (cur != null) {
+      // bell curve with marker
+      var W = 320, H = 90;
+      var mu = 160, sig = 55; // visual gaussian over the x-range (kg mapped)
+      var xmin = 0, xmax = s.elite * 1.15;
+      var pxx = function (kg) { return 20 + (kg - xmin) / (xmax - xmin) * (W - 30); };
+      var gauss = function (x) { return Math.exp(-0.5 * Math.pow((x - (xmax * 0.5)) / (xmax * 0.22), 2)); };
+      var pts = [];
+      for (var x = xmin; x <= xmax; x += xmax / 40) pts.push(pxx(x) + "," + (H - 15 - gauss(x) * (H - 30)));
+      var bands = [["beginner", "#C0392B"], ["novice", "#B27A00"], ["intermediate", "#67757B"], ["advanced", "#0F7B6F"], ["elite", "#0A5A51"]];
+      html += '<svg viewBox="0 0 ' + W + ' ' + H + '" style="margin-top:6px">';
+      html += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="#67757B" stroke-width="1.5"/>';
+      bands.forEach(function (b) { var xx = pxx(s[b[0]]); html += '<line x1="' + xx + '" y1="10" x2="' + xx + '" y2="' + (H - 15) + '" stroke="#E2E8E9"/>'; });
+      var mx = pxx(Math.min(cur, xmax));
+      html += '<line x1="' + mx + '" y1="6" x2="' + mx + '" y2="' + (H - 15) + '" stroke="#0F7B6F" stroke-width="2.5"/>';
+      html += '<text x="' + mx + '" y="4" font-size="9" fill="#0F7B6F" text-anchor="middle">Du</text>';
+      html += '</svg>';
+      html += '<div style="display:flex;justify-content:space-between"><span style="color:#0F7B6F;font-weight:600">' + lvl + '</span>' +
+        '<span class="muted">stärker als ≈ ' + pct + '% (Standard ~82 kg)</span></div>';
+    }
+    html += '</div>';
+  });
+  html += '<div class="muted" style="margin:-4px 0 8px">Einordnung gegen grobe Kraftstandards — keine DNA-Analyse. Frühe Werte schwanken.</div>';
+
+  // Gain rate breakdown week/month/year
+  html += '<h2>Kraftzuwachs-Rate</h2><div class="card"><table><tr><th>Lift</th><th>/Woche</th><th>/Monat</th><th>/Jahr*</th></tr>';
+  lifts.forEach(function (p) {
+    var g = gainRate(p[0]);
+    if (!g) { html += '<tr><td>' + p[1] + '</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>'; return; }
+    html += '<tr><td>' + p[1] + '</td>' +
+      '<td class="n">' + (g.week >= 0 ? "+" : "") + g.week.toFixed(1) + '</td>' +
+      '<td class="n">' + (g.month >= 0 ? "+" : "") + g.month.toFixed(1) + '</td>' +
+      '<td class="n">' + (g.month * 12 >= 0 ? "+" : "") + (g.month * 12).toFixed(0) + '</td></tr>';
+  });
+  html += '</table><div class="muted" style="margin-top:6px">*Jahres-Hochrechnung aus aktueller Rate (real flacht die Kurve ab). Alle Werte in kg e1RM.</div></div>';
+
+  // e1rm charts
+  [["hinge", "Kreuzheben"], ["squat", "Kniebeuge"], ["push", "Bankdrücken"]].forEach(function (p) {
+    var arr = (trend.e1rm && trend.e1rm[p[0]]) || [];
+    html += '<h2>' + p[1] + ' – e1RM</h2><div class="card">' + lineChart(arr.map(function (x) { return x.v; }), arr.map(function (x) { return x.date.slice(5); }), "#0F7B6F") + '</div>';
+  });
+
+  // weight trend
+  html += '<h2>Gewichtstrend</h2><div class="card">' + lineChart(trend.bw.map(function (x) { return x.v; }), trend.bw.map(function (x) { return x.date.slice(5); }), "#0F7B6F") + '</div>';
+
+  // pain trend
+  html += '<h2>Schmerz unter Belastung</h2><div class="card">';
+  if (trend.pain.length >= 2) {
+    html += '<div class="muted" style="margin-bottom:4px">Schulter (rot), Knie (gelb), Nacken (grau)</div>';
+    html += '<svg viewBox="0 0 320 150">';
+    var series = [["sh", "#C0392B"], ["kn", "#B27A00"], ["nk", "#67757B"]];
+    for (var g = 0; g <= 2; g++) { var yy = 10 + g * 50; html += '<line x1="30" y1="' + yy + '" x2="310" y2="' + yy + '" stroke="#E2E8E9"/><text x="26" y="' + (yy + 3) + '" font-size="9" fill="#67757B" text-anchor="end">' + (10 - g * 5) + '</text>'; }
+    series.forEach(function (s) {
+      var n = trend.pain.length;
+      var pts = trend.pain.map(function (p, i) {
+        var x = 30 + (n <= 1 ? 0 : i * 280 / (n - 1));
+        var y = 10 + 100 - (p[s[0]] / 10) * 100;
+        return x + "," + y;
+      }).join(" ");
+      html += '<polyline points="' + pts + '" fill="none" stroke="' + s[1] + '" stroke-width="2"/>';
+    });
+    html += '</svg>';
+  } else { html += '<div class="muted">Ab 2 Check-ins erscheint hier der Verlauf.</div>'; }
+  html += '</div>';
+
+  app.innerHTML = html;
+  navHtml();
+}
+
+/* ---------- PROFILE ---------- */
+function renderProfile() {
+  var app = document.getElementById("app");
+  var html = headerHtml() + '<h2>Profil</h2><div class="card">' +
+    '<label>Körpergewicht (kg)</label><input id="p_w" type="number" value="' + profile.weightKg + '"/>' +
+    '<label>Körperfett (%)</label><input id="p_bf" type="number" value="' + profile.bf + '"/>' +
+    '<label>Ziel-Zunahmerate</label><select id="p_rate">' +
+    ['conservative:Konservativ', 'moderate:Moderat', 'aggressive:Ambitioniert'].map(function (o) {
+      var parts = o.split(":"); return '<option value="' + parts[0] + '"' + (profile.rate === parts[0] ? ' selected' : '') + '>' + parts[1] + '</option>';
+    }).join("") + '</select>' +
+    '<label>Eigene Kalorien (überschreibt Rate, optional)</label><input id="p_cal" type="number" value="' + (profile.manualCal || "") + '" placeholder="z.B. 3000"/>' +
+    '<div style="height:12px"></div><button onclick="saveProfile()">Speichern</button>' +
+    '</div>';
+  html += '<h2>Datensicherung</h2><div class="card">' +
+    '<button class="ghost" onclick="exportData()">Backup exportieren</button>' +
+    '<div style="height:8px"></div>' +
+    '<button class="ghost small" onclick="document.getElementById(\'imp\').click()">Backup laden</button>' +
+    '<input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)"/>' +
+    '<div class="muted" style="margin-top:8px">Deine Daten liegen dauerhaft auf diesem Gerät. Exportiere ab und zu ein Backup als Sicherung.</div></div>';
+  app.innerHTML = html;
+  navHtml();
+}
+window.saveProfile = function () {
+  profile.weightKg = parseFloat(v("p_w")) || profile.weightKg;
+  profile.bf = parseFloat(v("p_bf")) || profile.bf;
+  profile.rate = v("p_rate");
+  var mc = parseFloat(v("p_cal")); profile.manualCal = mc > 0 ? mc : null;
+  save("profile", profile);
+  flash("Profil gespeichert");
+  render();
+};
+window.exportData = function () {
+  var all = {};
+  for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf("il_") === 0) all[k] = localStorage.getItem(k); }
+  var blob = new Blob([JSON.stringify({ app: "IronLedger", date: today(), data: all }, null, 2)], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = "ironledger-backup-" + today() + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  flash("Backup exportiert");
+};
+window.importData = function (ev) {
+  var file = ev.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var obj = JSON.parse(reader.result);
+      if (!obj.data) throw new Error("Ungültige Datei");
+      Object.keys(obj.data).forEach(function (k) { localStorage.setItem(k, obj.data[k]); });
+      alert("Backup geladen. App wird neu geladen.");
+      location.reload();
+    } catch (e) { alert("Fehler: " + e.message); }
+  };
+  reader.readAsText(file);
+};
+
+/* ---------- NAV + ROUTER ---------- */
+function navHtml() {
+  var tabs = [["today", "Heute"], ["log", "Eintragen"], ["progress", "Verlauf"], ["profile", "Profil"]];
+  document.getElementById("nav").innerHTML = tabs.map(function (t) {
+    return '<button class="' + (tab === t[0] ? "active" : "") + '" onclick="go(\'' + t[0] + '\')">' + t[1] + '</button>';
+  }).join("");
+}
+window.go = function (t) { tab = t; render(); };
+function render() {
+  // refresh state from storage
+  checkinToday = load("checkin_" + today(), null);
+  workoutToday = load("workout_" + today(), null);
+  if (!profile) { renderSetup(); return; }
+  if (tab === "today") renderToday();
+  else if (tab === "log") renderLog();
+  else if (tab === "progress") renderProgress();
+  else if (tab === "profile") renderProfile();
+}
+
+/* ---------- boot ---------- */
+try {
+  render();
+} catch (e) {
+  document.getElementById("app").innerHTML = '<div style="padding:20px;color:#C0392B;font-family:monospace">FEHLER: ' + (e && e.message ? e.message : e) + '</div>';
+}
+</script>
+</body>
+</html>
