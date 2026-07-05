@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>Iron Ledger</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Iron Ledger" />
+<meta name="theme-color" content="#0F7B6F" />
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzBGN0I2RiIvPjxnIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik01NSA5MCBoNzAiLz48cmVjdCB4PSIzOCIgeT0iNjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSI0NCIgcng9IjYiIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxMjYiIHk9IjY4IiB3aWR0aD0iMTYiIGhlaWdodD0iNDQiIHJ4PSI2IiBmaWxsPSIjZmZmIi8+PC9nPjwvc3ZnPg==" />
+<link rel="manifest" href='data:application/json,{"name":"Iron Ledger","short_name":"IronLedger","start_url":".","display":"standalone","background_color":"%23F6F8F8","theme_color":"%230F7B6F","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiB2aWV3Qm94PSIwIDAgMTkyIDE5MiI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIHJ4PSI0MiIgZmlsbD0iIzBGN0I2RiIvPjxnIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPjxwYXRoIGQ9Ik01OCA5NiBoNzYiLz48cmVjdCB4PSI0MCIgeT0iNzIiIHdpZHRoPSIxOCIgaGVpZ2h0PSI0OCIgcng9IjciIGZpbGw9IiNmZmYiLz48cmVjdCB4PSIxMzQiIHk9IjcyIiB3aWR0aD0iMTgiIGhlaWdodD0iNDgiIHJ4PSI3IiBmaWxsPSIjZmZmIi8+PC9nPjwvc3ZnPg==","sizes":"192x192","type":"image/svg+xml"}]}' />
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #F6F8F8; overscroll-behavior: none; }
+  #root { min-height: 100vh; }
+  .min-h-screen{min-height:100vh}.max-w-3xl{max-width:48rem}.mx-auto{margin-left:auto;margin-right:auto}
+  /* Tailwind-like utility subset used by the app */
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/recharts/umd/Recharts.min.js" crossorigin></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root">
+  <div id="boot-status" style="font-family:sans-serif;padding:24px;color:#101619;">Lade Skripte…</div>
+</div>
+<script>
+  // Show any error directly on screen (no dev tools needed on iPhone)
+  window.addEventListener('error', function (e) {
+    var el = document.getElementById('boot-status') || document.getElementById('root');
+    if (el) el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">FEHLER:\n' + (e.message || e) + '\n\nDatei: ' + (e.filename||'?') + ' Zeile: ' + (e.lineno||'?') + '</div>';
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var el = document.getElementById('boot-status') || document.getElementById('root');
+    if (el) el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">PROMISE FEHLER:\n' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</div>';
+  });
+  // Check after a delay whether the CDN libraries actually loaded
+  setTimeout(function () {
+    var missing = [];
+    if (typeof React === 'undefined') missing.push('React');
+    if (typeof ReactDOM === 'undefined') missing.push('ReactDOM');
+    if (typeof Recharts === 'undefined') missing.push('Recharts');
+    if (typeof Babel === 'undefined') missing.push('Babel');
+    var el = document.getElementById('boot-status');
+    if (missing.length && el) {
+      el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">Diese Skripte konnten nicht geladen werden:\n' + missing.join(', ') + '\n\nMögliche Ursache: Internetverbindung oder CDN blockiert.</div>';
+    }
+  }, 4000);
+</script>
+<script type="text/babel" data-presets="react">
+
+// ---- Minimal lucide-react shim (inline SVGs) ----
+function mkIcon(paths) {
+  return function Icon({ size = 20, color = "currentColor", className = "", ...rest }) {
+    return React.createElement("svg", {
+      width: size, height: size, viewBox: "0 0 24 24", fill: "none",
+      stroke: color, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+      className, ...rest
+    }, paths.map((d, i) => React.createElement("path", { key: i, d })));
+  };
+}
+const Dumbbell = mkIcon(["M14.4 14.4 9.6 9.6", "M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z", "m21.5 21.5-1.4-1.4", "M3.9 3.9 2.5 2.5", "M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"]);
+const Flame = mkIcon(["M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"]);
+const AlertTriangle = mkIcon(["m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z", "M12 9v4", "M12 17h.01"]);
+const Settings = mkIcon(["M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"]);
+const Check = mkIcon(["M20 6 9 17l-5-5"]);
+const ClipboardList = mkIcon(["M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2", "M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z", "M12 11h4", "M12 16h4", "M8 11h.01", "M8 16h.01"]);
+const TrendingUp = mkIcon(["M22 7 13.5 15.5 8.5 10.5 2 17", "M16 7h6v6"]);
+const CalendarDays = mkIcon(["M8 2v4", "M16 2v4", "M3 10h18", "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", "M8 14h.01", "M12 14h.01", "M16 14h.01", "M8 18h.01", "M12 18h.01", "M16 18h.01"]);
+const Target = mkIcon(["M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "M12 12m-6 0a6 6 0 1 0 12 0a6 6 0 1 0-12 0", "M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"]);
+const ListChecks = mkIcon(["m3 17 2 2 4-4", "m3 7 2 2 4-4", "M13 6h8", "M13 12h8", "M13 18h8"]);
+
+// ---- Recharts from UMD global ----
+const { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer } = Recharts;
+const { useState, useEffect } = React;
+
+
+/* ---------- storage helpers ---------- */
+
+const todayStrOf = (dateObj) => {
+  const off = dateObj.getTimezoneOffset() * 60000;
+  return new Date(dateObj.getTime() - off).toISOString().slice(0, 10);
+};
+const todayStr = () => todayStrOf(new Date());
+const round25 = (x) => Math.round(x / 2.5) * 2.5;
+const upsertByDate = (arr, entry) => {
+  const c = [...(arr || [])];
+  const i = c.findIndex((e) => e.date === entry.date);
+  if (i >= 0) c[i] = entry; else c.push(entry);
+  return c;
+};
+
+// ---- IndexedDB persistent storage (survives app close, iOS-safe) ----
+const DB_NAME = "ironledger", STORE = "kv";
+let _dbPromise = null;
+function openDB() {
+  if (_dbPromise) return _dbPromise;
+  _dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return _dbPromise;
+}
+async function idbGet(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const r = tx.objectStore(STORE).get(key);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).put(val, key);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbAll() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const store = tx.objectStore(STORE);
+    const keys = store.getAllKeys(), vals = store.getAll();
+    const out = {};
+    tx.oncomplete = () => { keys.result.forEach((k, i) => (out[k] = vals.result[i])); resolve(out); };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+// localStorage mirror as a second safety net
+async function getJSON(key, fallback = null) {
+  try {
+    const v = await idbGet(key);
+    if (v != null) return typeof v === "string" ? JSON.parse(v) : v;
+  } catch (e) { console.warn("idb get failed", e); }
+  try {
+    const ls = localStorage.getItem("il:" + key);
+    if (ls != null) return JSON.parse(ls);
+  } catch {}
+  return fallback;
+}
+async function setJSON(key, value) {
+  let ok = false;
+  try { await idbSet(key, JSON.stringify(value)); ok = true; } catch (e) { console.warn("idb set failed", e); }
+  try { localStorage.setItem("il:" + key, JSON.stringify(value)); ok = true; } catch (e) { console.warn("ls set failed", e); }
+  return ok;
+}
+// Export / import for manual backups
+async function exportAllData() {
+  const all = await idbAll();
+  const parsed = {};
+  for (const [k, v] of Object.entries(all)) { try { parsed[k] = typeof v === "string" ? JSON.parse(v) : v; } catch { parsed[k] = v; } }
+  return { app: "IronLedger", exportedAt: new Date().toISOString(), data: parsed };
+}
+async function importAllData(obj) {
+  if (!obj || !obj.data) throw new Error("Ungültige Backup-Datei");
+  for (const [k, v] of Object.entries(obj.data)) await setJSON(k, v);
+  return Object.keys(obj.data).length;
+}
+
+const EMPTY_TRENDLOG = { bodyweight: [], intake: [], readiness: [], pain: [], sessions: [], loginDates: [], tdeeCorrection: 0, adaptInfo: null };
+
+function calcAge(dob) {
+  const d = new Date(dob);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
+/* ---------- nutrition (with learning) ---------- */
+
+const RATE_OPTIONS = [
+  { id: "conservative", label: "Konservativ", pct: 0.12, desc: "Minimale Fettzunahme, langsamster Muskelaufbau" },
+  { id: "moderate", label: "Moderat", pct: 0.22, desc: "Guter Kompromiss für DOTS-Ziel" },
+  { id: "aggressive", label: "Ambitioniert", pct: 0.4, desc: "Schneller, mehr Fettanteil am Zuwachs" },
+];
+
+function calcNutrition(profile, tdeeCorrection = 0) {
+  const leanMass = profile.weightKg * (1 - profile.bf / 100);
+  const bmr = 370 + 21.6 * leanMass;
+  const tdee = bmr * profile.activityMult + tdeeCorrection;
+  const rate = RATE_OPTIONS.find((r) => r.id === profile.targetRateId) || RATE_OPTIONS[1];
+  const targetWeeklyKg = (rate.pct / 100) * profile.weightKg;
+  const dailySurplus = Math.round((targetWeeklyKg * 7700) / 7);
+  const calculatedCalories = Math.round(tdee + dailySurplus);
+  const calories = profile.manualCalories ? profile.manualCalories : calculatedCalories;
+  const projectedWeeklyGainKg = ((calories - tdee) * 7) / 7700;
+  const protein = Math.round(profile.weightKg * 2.2);
+  const fat = Math.round(profile.weightKg * 0.9);
+  const carbs = Math.max(0, Math.round((calories - protein * 4 - fat * 9) / 4));
+  return { bmr: Math.round(bmr), tdee: Math.round(tdee), calories, protein, fat, carbs, rate, targetWeeklyKg, projectedWeeklyGainKg, calculatedCalories, tdeeCorrection };
+}
+
+function computeWeightTrend(log) {
+  if (!log || log.length < 6) return null;
+  const sorted = [...log].filter((e) => e.kg > 0).sort((a, b) => a.date.localeCompare(b.date));
+  const recent = sorted.slice(-14);
+  if (recent.length < 6) return null;
+  const half = Math.floor(recent.length / 2);
+  const older = recent.slice(0, half);
+  const newer = recent.slice(half);
+  const avg = (arr) => arr.reduce((s, e) => s + e.kg, 0) / arr.length;
+  const spanDays = (new Date(recent[recent.length - 1].date) - new Date(recent[0].date)) / 86400000;
+  if (spanDays < 6) return null;
+  const kgPerWeek = ((avg(newer) - avg(older)) / (spanDays / 2)) * 7;
+  return { kgPerWeek, points: recent.length };
+}
+
+function computeAdaptiveCorrection(profile, trendlog) {
+  const prev = trendlog.tdeeCorrection || 0;
+  const trend = computeWeightTrend(trendlog.bodyweight);
+  if (!trend) return { correction: prev, info: null };
+  const leanMass = profile.weightKg * (1 - profile.bf / 100);
+  const baseTdee = (370 + 21.6 * leanMass) * profile.activityMult;
+  const cutoff = Date.now() - 14 * 86400000;
+  const intakes = (trendlog.intake || []).filter((e) => new Date(e.date).getTime() >= cutoff && e.kcal > 0);
+  const nutNow = calcNutrition(profile, prev);
+  const assumedIntake = intakes.length >= 5 ? intakes.reduce((s, e) => s + e.kcal, 0) / intakes.length : nutNow.calories;
+  const impliedTdee = assumedIntake - (trend.kgPerWeek * 7700) / 7;
+  const corr = Math.max(-500, Math.min(500, impliedTdee - baseTdee));
+  const damped = Math.round(prev + (corr - prev) * 0.5);
+  return {
+    correction: damped,
+    info: { actualKgWk: trend.kgPerWeek, points: trend.points, assumedIntake: Math.round(assumedIntake), usedRealIntake: intakes.length >= 5 },
+  };
+}
+
+/* ---------- analytics helpers ---------- */
+
+const BIG_THREE = [
+  { key: "squat", label: "Kniebeuge" },
+  { key: "hinge", label: "Kreuzheben" },
+  { key: "push_horizontal", label: "Bankdrücken" },
+];
+
+function currentE1RM(history, key) {
+  const reps = (history[key] || []).filter((h) => h.type === "reps" && h.e1rm > 0);
+  return reps.length ? reps[reps.length - 1].e1rm : null;
+}
+function firstE1RM(history, key) {
+  const reps = (history[key] || []).filter((h) => h.type === "reps" && h.e1rm > 0);
+  return reps.length ? reps[0].e1rm : null;
+}
+function e1rmSeries(history, key) {
+  return (history[key] || []).filter((h) => h.type === "reps" && h.e1rm > 0).map((h) => ({ date: h.date.slice(5), e1rm: h.e1rm }));
+}
+
+function projectedLeanGain(trendlog, sessionsDone) {
+  const trend = computeWeightTrend(trendlog.bodyweight);
+  const consistencyFactor = Math.min(1, sessionsDone / 12);
+  let monthlyLean = 0.7 * consistencyFactor;
+  if (trend) {
+    if (trend.kgPerWeek <= 0) monthlyLean *= 0.35;
+    else if (trend.kgPerWeek < 0.1) monthlyLean *= 0.7;
+    else if (trend.kgPerWeek > 0.5) monthlyLean *= 0.85;
+  }
+  const perDay = monthlyLean / 30;
+  const elapsedDays = (sessionsDone * 7) / 4;
+  return { monthly: monthlyLean, cumulative: perDay * elapsedDays };
+}
+
+const RESPONSE_BANDS = [
+  { label: "Unterdurchschnittlich", color: "#C0392B", lo: 0, hi: 1.5 },
+  { label: "Normal", color: "#67757B", lo: 1.5, hi: 3.5 },
+  { label: "Überdurchschnittlich", color: "#0F7B6F", lo: 3.5, hi: 6 },
+  { label: "Elite", color: "#B27A00", lo: 6, hi: 99 },
+];
+function gaussian(x, mu, sigma) { return Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2)); }
+function bellData(userMonthlyGain) {
+  const mu = 3.0, sigma = 1.6, pts = [];
+  for (let x = 0; x <= 9; x += 0.25) pts.push({ x: Math.round(x * 100) / 100, y: gaussian(x, mu, sigma), band: (RESPONSE_BANDS.find((b) => x >= b.lo && x < b.hi) || {}).label });
+  return { pts, mu, sigma, user: userMonthlyGain };
+}
+function classifyResponse(gain) {
+  return RESPONSE_BANDS.find((b) => gain >= b.lo && gain < b.hi) || RESPONSE_BANDS[RESPONSE_BANDS.length - 1];
+}
+function monthlyGainForLift(history, key, sessionsDone) {
+  const first = firstE1RM(history, key), cur = currentE1RM(history, key);
+  if (first == null || cur == null || sessionsDone < 2) return null;
+  const weeksElapsed = Math.max(1, (sessionsDone * 7) / 4);
+  return ((cur - first) / weeksElapsed) * 4.345;
+}
+
+function computeStreak(loginDates) {
+  if (!loginDates || !loginDates.length) return { current: 0, best: 0 };
+  const set = new Set(loginDates);
+  let current = 0;
+  let d = new Date(todayStr());
+  while (set.has(todayStrOf(d))) { current++; d.setDate(d.getDate() - 1); }
+  const sorted = [...set].sort();
+  let best = 0, run = 0, prev = null;
+  for (const ds of sorted) {
+    if (prev) { const gap = (new Date(ds) - new Date(prev)) / 86400000; run = gap === 1 ? run + 1 : 1; }
+    else run = 1;
+    best = Math.max(best, run); prev = ds;
+  }
+  return { current, best };
+}
+
+function phaseDescription(stages) {
+  const s = { bench: 0, squat: 0, ...(stages || {}) };
+  const inRehab = s.bench < 3 || s.squat < 3;
+  if (inRehab) return {
+    title: "Phase 1 — Rehabilitativer Wiederaufbau",
+    body: "Schmerzgesteuerte Rückführung von Kniebeuge & Bankdrücken über gestufte Belastungsprotokolle (Isometrie → Heavy Slow Resistance → spezifische Varianten). Kreuzheben trägt in dieser Phase die Progression. Kalorien im leichten Aufbau, Fokus auf Sehnentoleranz statt Maximallast.",
+  };
+  return {
+    title: "Phase 2 — Kraftaufbau (alle Lifts frei)",
+    body: "Alle drei Wettkampflifts sind schmerzfrei zurück. Der Coach fährt jetzt einen periodisierten 5-Wochen-Mesozyklus (Akkumulation → Intensivierung → Deload) mit DUP: Kraft- und Hypertrophie-Tage im Wechsel, jeder Lift 2×/Woche. Fokus auf e1RM-Progression nahe MAV, mit Blick auf DOTS.",
+  };
+}
+
+function painLabel(v) {
+  if (v === 0) return "Kein Schmerz";
+  if (v <= 3) return "Leicht, kaum wahrnehmbar";
+  if (v <= 6) return "Mäßig, spürbar, aber tolerierbar";
+  if (v <= 9) return "Stark, deutlich einschränkend";
+  return "Maximal vorstellbar";
+}
+function rpeLabel(v) {
+  if (v >= 10) return "Muskelversagen — kein Rep mehr möglich";
+  if (v >= 9) return "Noch 1 Rep möglich (RIR 1)";
+  if (v >= 8) return "Noch 2 Reps möglich (RIR 2)";
+  if (v >= 7) return "Noch 3 Reps möglich (RIR 3)";
+  if (v >= 5) return "Lockerer Aufwärmsatz";
+  return "Sehr leicht";
+}
+
+/* ---------- readiness ---------- */
+
+function readinessScore(c) {
+  if (!c) return null;
+  const sleepScore = Math.min(1, c.sleepHours / 8) * 100;
+  const qualScore = (c.sleepQuality / 5) * 100;
+  const stressScore = ((5 - c.stress) / 4) * 100;
+  const restPainAvg = (c.painShoulderRest + c.painKneeRest + c.painNeckRest) / 3;
+  const loadPainAvg = (c.painShoulderLoad + c.painKneeLoad + c.painNeckLoad) / 3;
+  const painScore = ((10 - (restPainAvg * 0.6 + loadPainAvg * 0.4)) / 10) * 100;
+  const moodScore = ((c.mood ?? 3) / 5) * 100;
+  let score = sleepScore * 0.22 + qualScore * 0.15 + stressScore * 0.15 + painScore * 0.33 + moodScore * 0.15;
+  if (c.alcoholUnits) score -= Math.min(15, c.alcoholUnits * 4);
+  if (c.stiffness) score -= Math.min(10, c.stiffness * 2);
+  return Math.round(Math.max(0, Math.min(100, score)));
+}
+
+/* ---------- exercise selection ---------- */
+
+const SESSIONS = [
+  { id: "A", label: "Unterkörper — Zugmuster", slots: ["hinge", "squat", "core"] },
+  { id: "B", label: "Oberkörper — Push / Pull", slots: ["push_horizontal", "pull_horizontal", "pull_vertical", "neck_iso"] },
+  { id: "C", label: "Unterkörper — Druckmuster", slots: ["squat", "hinge", "core"] },
+  { id: "D", label: "Oberkörper — Pull-Fokus", slots: ["pull_vertical", "pull_horizontal", "push_horizontal_light", "neck_iso"] },
+];
+
+const RETURN_STAGES = {
+  bench: {
+    label: "Bankdrücken",
+    stages: [
+      { name: "S0 · Schmerzmanagement", advance: "3 Check-ins in Folge: Schulter Belastung ≤3 & Ruhe ≤2", ex: { pattern: "push_horizontal", name: "Cable Press (neutral, tiefer Winkel)", type: "reps", sets: 3, reps: 12, rpeTarget: 5, note: "Supraspinatus-schonend: Ellbogen tief & nah, neutraler Griff — Winkel meiden, die das Schulterdach verkleinern." } },
+      { name: "S1 · Schmerzfreies Drückmuster", advance: "3 Check-ins in Folge: Schulter Belastung ≤3 & Ruhe ≤2", ex: { pattern: "push_horizontal", name: "Floor Press (Kurzhantel, neutral)", type: "reps", sets: 3, reps: 8, rpeTarget: 7, note: "Begrenzte ROM entlastet die Supraspinatussehne; Last graduell steigern." } },
+      { name: "S2 · Spezifische Annäherung", advance: "3 Check-ins in Folge: Schulter Belastung ≤3 & Ruhe ≤2", ex: { pattern: "push_horizontal", name: "Close-Grip / Spoto Press (Langhantel)", type: "reps", sets: 4, reps: 6, rpeTarget: 7, note: "Reduzierte Abduktion & ROM — letzte Brücke zur Wettkampfbewegung." } },
+      { name: "S3 · Wettkampf-Bankdrücken", advance: "Endstufe — normale Progression", ex: { pattern: "push_horizontal", name: "Bankdrücken (Wettkampfgriff)", type: "reps", sets: 4, reps: 5, rpeTarget: 8, note: "e1RM-getriebene Progression." } },
+    ],
+  },
+  squat: {
+    label: "Kniebeuge",
+    stages: [
+      { name: "S0 · Isometrie (Schmerzmodulation)", advance: "3 Check-ins in Folge: Knie Belastung ≤3 & Ruhe ≤2", ex: { pattern: "squat", name: "Spanish Squat (isometrisch)", type: "iso", sets: 5, durationSec: 45, note: "Isometrie wirkt bei Patellasehnen-Reizung oft akut schmerzdämpfend (Rio et al.). Schmerz beim Halten max. 3/10." } },
+      { name: "S1 · Heavy Slow Resistance", advance: "3 Check-ins in Folge: Knie Belastung ≤3 & Ruhe ≤2", ex: { pattern: "squat", name: "Beinpresse HSR (3s runter / 3s hoch, schmerzfreie ROM)", type: "reps", sets: 3, reps: 8, rpeTarget: 7, note: "HSR-Protokoll (Kongsgaard) — der am besten belegte Aufbaureiz für Patellasehnen. Schmerz ≤3/10 im Satz erlaubt, danach keine Verschlechterung." } },
+      { name: "S2 · Box Squat", advance: "3 Check-ins in Folge: Knie Belastung ≤3 & Ruhe ≤2", ex: { pattern: "squat", name: "Box Squat (hohe Box, High-Bar)", type: "reps", sets: 4, reps: 5, rpeTarget: 7, note: "Kontrollierte Tiefe — Sehne an axiale Last unter Kniebeugung gewöhnen." } },
+      { name: "S3 · Wettkampf-Kniebeuge", advance: "Endstufe — normale Progression", ex: { pattern: "squat", name: "Kniebeuge (Wettkampfstil)", type: "reps", sets: 4, reps: 5, rpeTarget: 8, note: "e1RM-getriebene Progression." } },
+    ],
+  },
+};
+
+function stageEx(lift, idx) {
+  const st = RETURN_STAGES[lift].stages;
+  const i = Math.max(0, Math.min(st.length - 1, idx));
+  return { ...st[i].ex };
+}
+function lightify(ex) {
+  if (ex.type !== "reps") return { ...ex, sets: Math.max(2, ex.sets - 2) };
+  return { ...ex, name: ex.name + " — leicht", sets: Math.max(2, ex.sets - 1), rpeTarget: Math.max(5, ex.rpeTarget - 2) };
+}
+function advanceReady(lift, trendlog) {
+  const l3 = (trendlog.pain || []).slice(-3);
+  if (l3.length < 3) return { ready: false, detail: `${l3.length}/3 Check-ins vorhanden` };
+  const ok = l3.every((p) => (lift === "bench" ? p.sL <= 3 && p.sR <= 2 : p.kL <= 3 && p.kR <= 2));
+  return { ready: ok, detail: ok ? "Kriterien erfüllt — Aufstieg sinnvoll" : "Schmerz noch über Schwelle (Belastung ≤3 & Ruhe ≤2 nötig)" };
+}
+function pickHinge(kneeLoadPain) {
+  return { pattern: "hinge", name: "Kreuzheben (konventionell)", type: "reps", sets: 4, reps: 5, rpeTarget: kneeLoadPain >= 6 ? 7 : 8, note: "Prioritätslift: schmerzfrei → hier läuft die volle KDK-Progression." };
+}
+const FIXED = {
+  pull_horizontal: { pattern: "pull_horizontal", name: "Langhantelrudern / enger Kabelzug", type: "reps", sets: 3, reps: 10, rpeTarget: 7 },
+  pull_vertical: { pattern: "pull_vertical", name: "Latzug (neutraler Griff)", type: "reps", sets: 3, reps: 10, rpeTarget: 7 },
+  neck_iso: { pattern: "neck_iso", name: "Nacken-Isometrie (4-Wege)", type: "iso", sets: 3, durationSec: 25, note: "Isometrie hilft laut deiner Erfahrung gut gegen die Steifheit." },
+  core: { pattern: "core", name: "Pallof Press (Anti-Rotation)", type: "reps", sets: 3, reps: 12, rpeTarget: 6 },
+};
+
+function resolveSlot(slot, pain, stages) {
+  if (slot === "squat") {
+    let idx = stages.squat, temp = false;
+    if (pain.kneeLoad >= 6 && idx > 0) { idx -= 1; temp = true; }
+    return { ex: stageEx("squat", idx), temp, lift: "squat", usedStage: idx };
+  }
+  if (slot === "hinge") return { ex: pickHinge(pain.kneeLoad) };
+  if (slot === "push_horizontal" || slot === "push_horizontal_light") {
+    let idx = stages.bench, temp = false;
+    if (pain.shoulderLoad >= 6 && idx > 0) { idx -= 1; temp = true; }
+    let ex = stageEx("bench", idx);
+    if (slot === "push_horizontal_light") ex = lightify(ex);
+    return { ex, temp, lift: "bench", usedStage: idx };
+  }
+  return { ex: { ...FIXED[slot] } };
+}
+
+function buildRehabItems(c) {
+  const items = [];
+  const shoulderPain = Math.max(c.painShoulderRest, c.painShoulderLoad);
+  const kneePain = Math.max(c.painKneeRest, c.painKneeLoad);
+  const neckPain = Math.max(c.painNeckRest, c.painNeckLoad);
+  if (shoulderPain >= 3) {
+    items.push({ pattern: "rehab_shoulder", isRehab: true, name: "Außenrotation mit Band (Rotatorenmanschette)", type: "reps", sets: 3, reps: 15, rpeTarget: 5, note: "Leichte Last, hohe Wdh-Zahl — Fokus auf Ansteuerung, nicht Ermüdung. Standard-Baustein bei Supraspinatus-Reizung." });
+    items.push({ pattern: "rehab_shoulder", isRehab: true, name: "Prone Y-T-W (Skapula-Stabilisation)", type: "reps", sets: 2, reps: 12, rpeTarget: 5 });
+  }
+  if (kneePain >= 3) {
+    items.push({ pattern: "rehab_knee", isRehab: true, name: "Slant-Board Isometric Wall Sit", type: "iso", sets: 3, durationSec: 30, note: "Ergänzt die Spanish-Squat-Isometrie, andere Winkelbelastung." });
+  }
+  if (neckPain >= 3) {
+    items.push({ pattern: "rehab_neck", isRehab: true, name: "Deep Neck Flexor Holds (Chin Tuck)", type: "iso", sets: 3, durationSec: 15, note: "Stärkt tiefe Nackenbeuger — oft hilfreich bei Steifheit/Haltung." });
+  }
+  return items;
+}
+
+/* ---------- volume landmarks ---------- */
+
+const PATTERN_MUSCLES = {
+  squat: ["quads"],
+  hinge: ["hamstrings", "back"],
+  push_horizontal: ["chest", "triceps"],
+  pull_horizontal: ["back", "biceps"],
+  pull_vertical: ["back", "biceps"],
+  core: ["abs"],
+};
+const MUSCLE_LANDMARKS = {
+  quads: { mev: 6, mav: 12, mrv: 18 },
+  hamstrings: { mev: 4, mav: 10, mrv: 16 },
+  chest: { mev: 6, mav: 12, mrv: 20 },
+  back: { mev: 8, mav: 14, mrv: 22 },
+  triceps: { mev: 4, mav: 10, mrv: 16 },
+  biceps: { mev: 4, mav: 10, mrv: 16 },
+  abs: { mev: 6, mav: 12, mrv: 20 },
+};
+const MUSCLE_DE = { quads: "Quadrizeps", hamstrings: "Beinbeuger", chest: "Brust", back: "Rücken", triceps: "Trizeps", biceps: "Bizeps", abs: "Rumpf" };
+
+function computeWeeklyVolume(history) {
+  const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+  const totals = {};
+  Object.keys(MUSCLE_LANDMARKS).forEach((k) => (totals[k] = 0));
+  for (const [pattern, entries] of Object.entries(history)) {
+    const muscles = PATTERN_MUSCLES[pattern];
+    if (!muscles) continue;
+    for (const e of entries || []) {
+      if (new Date(e.date).getTime() < cutoff) continue;
+      const sc = e.setsCount || 1;
+      muscles.forEach((m) => (totals[m] += sc));
+    }
+  }
+  return totals;
+}
+function volumeStatus(sets, land) {
+  if (sets < land.mev) return { label: "Unter Minimum — aufstocken", color: "#C0392B" };
+  if (sets <= land.mav) return { label: "Aufbaubereich", color: "#0F7B6F" };
+  if (sets <= land.mrv) return { label: "Hoch — Erholung beobachten", color: "#B27A00" };
+  return { label: "Über Maximalvolumen — reduzieren", color: "#C0392B" };
+}
+
+/* ---------- fatigue / deload detection ---------- */
+
+function assessFatigue(history, trendlog) {
+  const reasons = [];
+  const rl = (trendlog.readiness || []).slice(-3);
+  if (rl.length === 3) {
+    const rAvg = rl.reduce((s, e) => s + e.score, 0) / 3;
+    if (rAvg < 55) reasons.push(`Ø-Readiness der letzten 3 Check-ins: ${Math.round(rAvg)} (<55)`);
+  }
+  const sl = (trendlog.sessions || []).slice(-3);
+  if (sl.length === 3) {
+    const sAvg = sl.reduce((s, e) => s + e.sessionRpe, 0) / 3;
+    if (sAvg >= 8.5) reasons.push(`Ø-Session-RPE der letzten 3 Einheiten: ${sAvg.toFixed(1)} (sehr hoch)`);
+  }
+  const nameMap = { squat: "Kniebeuge-Muster", hinge: "Kreuzheben-Muster", push_horizontal: "Drück-Muster" };
+  for (const key of ["squat", "hinge", "push_horizontal"]) {
+    const reps = (history[key] || []).filter((h) => h.type === "reps");
+    if (reps.length >= 3) {
+      const l3 = reps.slice(-3).map((h) => h.e1rm);
+      if (l3[2] < l3[1] && l3[1] < l3[0]) reasons.push(`e1RM-Abwärtstrend: ${nameMap[key]} (3 Einheiten in Folge)`);
+    }
+  }
+  const perfDecline = reasons.some((r) => r.startsWith("e1RM"));
+  const fatigueSignal = reasons.some((r) => r.startsWith("Ø-"));
+  return { deloadRecommended: perfDecline && fatigueSignal, reasons };
+}
+
+/* ---------- session builder (with decision log) ---------- */
+
+function buildWeekOverview(stages) {
+  const stagesSafe = { bench: 0, squat: 0, ...(stages || {}) };
+  const neutralPain = { shoulderLoad: 0, kneeLoad: 0, neckLoad: 0 };
+  return SESSIONS.map((tmpl) => ({
+    id: tmpl.id,
+    label: tmpl.label,
+    exercises: tmpl.slots.map((slot) => {
+      const res = resolveSlot(slot, neutralPain, stagesSafe);
+      return res.ex;
+    }),
+  }));
+}
+
+/* ---------- COACH ENGINE ---------- */
+
+// Mesocycle: a periodized block that ramps volume/intensity then deloads.
+// weekInBlock is derived from completed sessions so it advances automatically.
+const MESO = {
+  lengthWeeks: 5, // 4 accumulation + 1 deload
+  // per week: RPE cap and volume multiplier applied on top of base template
+  weeks: [
+    { phase: "Akkumulation 1", rpeCap: 7, volMult: 1.0, repBias: 0 },
+    { phase: "Akkumulation 2", rpeCap: 8, volMult: 1.1, repBias: 0 },
+    { phase: "Intensivierung 1", rpeCap: 8.5, volMult: 1.0, repBias: -1 },
+    { phase: "Intensivierung 2", rpeCap: 9, volMult: 0.9, repBias: -2 },
+    { phase: "Deload", rpeCap: 6, volMult: 0.55, repBias: 0 },
+  ],
+};
+
+function mesoState(trendlog) {
+  const sessions = trendlog.sessions || [];
+  const done = sessions.length;
+  // 4 sessions per week in the rotation → derive week index
+  const weekAbs = Math.floor(done / 4);
+  const weekInBlock = weekAbs % MESO.lengthWeeks;
+  const blockNumber = Math.floor(weekAbs / MESO.lengthWeeks) + 1;
+  return { ...MESO.weeks[weekInBlock], weekInBlock, blockNumber, weekAbs, sessionsDone: done };
+}
+
+// DUP: vary rep focus by session slot within the week for concurrent strength+hypertrophy
+const DUP_BY_DAY = { A: "kraft", B: "hypertrophie", C: "kraft", D: "hypertrophie" };
+function applyDUP(ex, dayId, repBias) {
+  if (ex.type !== "reps") return ex;
+  const focus = DUP_BY_DAY[dayId] || "kraft";
+  if (focus === "hypertrophie" && !ex.isRehab) {
+    return { ...ex, reps: Math.max(3, ex.reps + 3 + repBias), dupFocus: "Hypertrophie" };
+  }
+  return { ...ex, reps: Math.max(1, ex.reps + repBias), dupFocus: "Kraft" };
+}
+
+// Progress verdict per lift: is the athlete responding well?
+function liftVerdict(history, key, sessionsDone) {
+  const reps = (history[key] || []).filter((h) => h.type === "reps" && h.e1rm > 0);
+  if (reps.length < 3) return { status: "sammelt", color: "#67757B", text: "Datenbasis wächst noch" };
+  const recent = reps.slice(-4);
+  const slope = (recent[recent.length - 1].e1rm - recent[0].e1rm) / (recent.length - 1);
+  const avgRpe = recent.reduce((s, r) => s + (r.rpe || 8), 0) / recent.length;
+  if (slope > 0.5) return { status: "steigt", color: "#0F7B6F", text: `e1RM steigt (+${slope.toFixed(1)} kg/Einheit)` };
+  if (slope >= -0.3 && avgRpe >= 9) return { status: "grenzwertig", color: "#B27A00", text: "Plateau bei hohem RPE — Ermüdung wahrscheinlich" };
+  if (slope >= -0.3) return { status: "haltend", color: "#B27A00", text: "Stagnation — Reiz evtl. zu niedrig" };
+  return { status: "fällt", color: "#C0392B", text: `e1RM fällt (${slope.toFixed(1)} kg/Einheit)` };
+}
+
+// Volume autoregulation: nudge weekly sets toward MAV based on recovery signals.
+function volumeVerdict(history, trendlog) {
+  const vol = computeWeeklyVolume(history);
+  const rl = (trendlog.readiness || []).slice(-4);
+  const avgReadiness = rl.length ? rl.reduce((s, e) => s + e.score, 0) / rl.length : null;
+  const recovering = avgReadiness == null || avgReadiness >= 60;
+  const recs = [];
+  for (const [m, land] of Object.entries(MUSCLE_LANDMARKS)) {
+    const sets = vol[m] || 0;
+    if (sets < land.mev) recs.push({ m, action: "rauf", detail: `${MUSCLE_DE[m]}: unter MEV (${sets}<${land.mev}) → mehr Volumen` });
+    else if (sets > land.mrv) recs.push({ m, action: "runter", detail: `${MUSCLE_DE[m]}: über MRV (${sets}>${land.mrv}) → reduzieren` });
+    else if (sets >= land.mav && !recovering) recs.push({ m, action: "runter", detail: `${MUSCLE_DE[m]}: hohes Volumen + schlechte Erholung → halten/reduzieren` });
+  }
+  return { recs, avgReadiness, recovering };
+}
+
+// Overall coach summary shown on Today
+function coachSummary(history, trendlog, stages) {
+  const meso = mesoState(trendlog);
+  const verdicts = BIG_THREE.map((l) => ({ ...l, v: liftVerdict(history, l.key, meso.sessionsDone) }));
+  const vv = volumeVerdict(history, trendlog);
+  const falling = verdicts.filter((x) => x.v.status === "fällt").length;
+  const rising = verdicts.filter((x) => x.v.status === "steigt").length;
+  let headline, tone;
+  if (meso.phase === "Deload") { headline = "Deload-Woche — geplante Erholung, Reize bewusst niedrig."; tone = "#B27A00"; }
+  else if (falling >= 2) { headline = "Mehrere Lifts fallen — Ermüdung oder zu wenig Erholung. Coach drosselt."; tone = "#C0392B"; }
+  else if (rising >= 2) { headline = "Du fährst gut — Kraft steigt, Kurs beibehalten."; tone = "#0F7B6F"; }
+  else { headline = "Solider Kurs — kleinere Anpassungen laufen automatisch."; tone = "#67757B"; }
+  return { meso, verdicts, vv, headline, tone };
+}
+
+function applyReadinessDamping(ex, readiness) {
+  if (ex.type !== "reps" || readiness == null) return ex;
+  if (readiness < 45) return { ...ex, sets: Math.max(2, ex.sets - 1), rpeTarget: Math.max(5, ex.rpeTarget - 2), damped: true };
+  if (readiness < 60) return { ...ex, rpeTarget: Math.max(5, ex.rpeTarget - 1), damped: true };
+  return ex;
+}
+
+// RTS-style: derive target working weight from a *projected* e1RM that trends
+// upward only when recent same-pattern sessions were completed at/under target RPE.
+function projectedE1RM(hist) {
+  const reps = hist.filter((h) => h.type === "reps" && h.e1rm > 0);
+  if (!reps.length) return null;
+  const last = reps[reps.length - 1];
+  if (reps.length < 2) return last.e1rm;
+  const prev = reps[reps.length - 2];
+  const rising = last.e1rm >= prev.e1rm;
+  // small progressive step when trend is up and last RPE wasn't maxed out
+  const step = rising && last.rpe <= 8.5 ? 1.01 : 1.0;
+  return last.e1rm * step;
+}
+
+function recommendWeight(ex, history) {
+  if (ex.type !== "reps") return null;
+  const hist = (history[ex.pattern] || []).filter((h) => h.type === "reps");
+  if (!hist.length) return null;
+  const e1 = projectedE1RM(hist);
+  const rir = 10 - ex.rpeTarget;
+  const w = e1 / (1 + (ex.reps + rir) * 0.0333);
+  return round25(w);
+}
+
+// Per-set load prescription: top set at target, back-off sets reduced to hold RPE
+// roughly constant as fatigue accumulates (RTS fatigue-percent concept, simplified).
+function setPrescription(topWeight, sets, type) {
+  if (!topWeight || type !== "reps") return null;
+  const dropPerSet = 0.03; // ~3% off per following set to keep RPE stable
+  return Array.from({ length: sets }, (_, i) => round25(topWeight * (1 - dropPerSet * i)));
+}
+
+function buildSessionCore(dayIndex, c, hist, trendlog, stages, opts = {}) {
+  const tmpl = SESSIONS[dayIndex % SESSIONS.length];
+  const r = readinessScore(c);
+  const pain = { shoulderLoad: c.painShoulderLoad, kneeLoad: c.painKneeLoad, neckLoad: c.painNeckLoad };
+  const stagesSafe = { bench: 0, squat: 0, ...(stages || {}) };
+  const decisions = [];
+  const fatigue = assessFatigue(hist, trendlog);
+  const meso = mesoState(trendlog);
+  // Deload triggers either from the planned mesocycle week OR from acute fatigue signals
+  const mesoDeload = meso.phase === "Deload";
+  const deloadActive = (fatigue.deloadRecommended || mesoDeload) && !opts.skipDeload;
+
+  const liftStageUsed = {};
+  const tempNotes = [];
+  const exercises = tmpl.slots.map((slot) => {
+    const res = resolveSlot(slot, pain, stagesSafe);
+    let ex = res.ex;
+    if (res.lift) {
+      liftStageUsed[res.lift] = RETURN_STAGES[res.lift].stages[res.usedStage].name;
+      if (res.temp) tempNotes.push(`${RETURN_STAGES[res.lift].label}: Schmerz heute ≥6/10 → temporär zurückgestuft auf ${liftStageUsed[res.lift]}`);
+    }
+    // DUP rep focus by day + mesocycle rep bias
+    ex = applyDUP(ex, tmpl.id, meso.repBias);
+    // Mesocycle volume multiplier (rounded, min 1 working set kept)
+    if (ex.type === "reps" && !ex.isRehab && meso.volMult !== 1) {
+      ex = { ...ex, sets: Math.max(1, Math.round(ex.sets * meso.volMult)) };
+    }
+    // Mesocycle RPE cap
+    if (ex.type === "reps" && ex.rpeTarget > meso.rpeCap) {
+      ex = { ...ex, rpeTarget: meso.rpeCap };
+    }
+    if (deloadActive && ex.type === "reps") {
+      ex = { ...ex, sets: Math.max(2, Math.ceil(ex.sets * 0.6)), rpeTarget: Math.min(ex.rpeTarget, 6), deloaded: true };
+    } else {
+      ex = applyReadinessDamping(ex, r);
+    }
+    const rec = recommendWeight(ex, hist);
+    const perSet = setPrescription(rec, ex.sets, ex.type);
+    return { ...ex, recommendedWeight: rec, perSet, exerciseNote: "" };
+  });
+
+  decisions.push(`Mesozyklus Block ${meso.blockNumber}, Woche ${meso.weekInBlock + 1}/5 — ${meso.phase} (RPE-Cap ${meso.rpeCap}, Volumen ×${meso.volMult})`);
+  if (liftStageUsed.squat) decisions.push(`Squat-Slot nach Rückkehr-Fahrplan: ${liftStageUsed.squat}`);
+  if (liftStageUsed.bench) decisions.push(`Push-Slot nach Rückkehr-Fahrplan: ${liftStageUsed.bench}`);
+  tempNotes.forEach((t) => decisions.push(t));
+  if (tmpl.slots.includes("hinge") && c.painKneeLoad >= 6) decisions.push("Knie-Schmerz hoch → Kreuzheben-RPE-Ziel auf 7 gesenkt");
+
+  if (!deloadActive) {
+    if (r != null && r < 45) decisions.push(`Readiness ${r} (<45) → pro Übung 1 Satz weniger, RPE-Ziel −2`);
+    else if (r != null && r < 60) decisions.push(`Readiness ${r} (<60) → RPE-Ziele um 1 gesenkt`);
+  }
+
+  const rehab = buildRehabItems(c).map((ex) => ({ ...ex, recommendedWeight: null, exerciseNote: "" }));
+  if (rehab.length) decisions.push(`${rehab.length} Reha-Übung(en) ergänzt (gemeldeter Schmerz ≥3/10)`);
+
+  if (deloadActive) decisions.push("DELOAD aktiv: " + fatigue.reasons.join(" · ") + " → Volumen ~−40 %, RPE max. 6");
+  else if (fatigue.reasons.length) decisions.push("Ermüdungs-Monitor (nur Info): " + fatigue.reasons.join(" · "));
+  if (opts.skipDeload && fatigue.deloadRecommended) decisions.push("Deload manuell übersprungen — Empfehlung bleibt bestehen");
+
+  return { date: todayStr(), dayId: tmpl.id, label: tmpl.label, readiness: r, deload: deloadActive, deloadRecommended: fatigue.deloadRecommended, exercises: [...exercises, ...rehab], decisions };
+}
+
+const emptyCheckin = () => ({
+  sleepHours: 7.5, sleepQuality: 3, stress: 3, mood: 3, bodyweight: "",
+  painShoulderRest: 0, painShoulderLoad: 0,
+  painKneeRest: 0, painKneeLoad: 0,
+  painNeckRest: 0, painNeckLoad: 0,
+  restingHR: "", neatSteps: "", alcoholUnits: 0, stiffness: 0, actualKcalYesterday: "",
+  notes: { schulter: "", knie: "", nacken: "", sonstiges: "" },
+});
+
+/* ---------- UI shell ---------- */
+
+const TABS = [
+  { id: "today", label: "Heute", icon: Flame },
+  { id: "week", label: "Woche", icon: CalendarDays },
+  { id: "log", label: "Eintragen", icon: ClipboardList },
+  { id: "progress", label: "Verlauf", icon: TrendingUp },
+  { id: "profile", label: "Profil", icon: Settings },
+];
+
+function IronLedger() {
+  const [ready, setReady] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [tab, setTab] = useState("today");
+  const [checkin, setCheckin] = useState(null);
+  const [checkinDraft, setCheckinDraft] = useState(emptyCheckin());
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [session, setSession] = useState(null);
+  const [history, setHistory] = useState({});
+  const [trendlog, setTrendlog] = useState(EMPTY_TRENDLOG);
+  const [settings, setSettings] = useState({ dayIndex: 0 });
+  const [postQ, setPostQ] = useState({ sessionRpe: 7, notes: { technik: "", schmerz: "", sonstiges: "" } });
+  const [checklist, setChecklist] = useState({ calories: false, macros: false, trained: false, journal: false });
+  const [savedFlash, setSavedFlash] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const p = await getJSON("profile");
+      const sRaw = await getJSON("settings", { dayIndex: 0, stages: { bench: 0, squat: 0 } });
+      const s = { ...sRaw, stages: { bench: 0, squat: 0, ...(sRaw.stages || {}) } };
+      let c = await getJSON("checkin:" + todayStr());
+      let recoveredWorkout = null;
+      if (!c) {
+        const latest = await getJSON("checkin_latest");
+        // Accept the latest check-in if it's from today (covers any date-key edge cases)
+        if (latest && latest.date === todayStr()) {
+          c = latest;
+          // re-persist under the dated key so it's found directly next time
+          await setJSON("checkin:" + todayStr(), c);
+        }
+      }
+      if (c) {
+        recoveredWorkout = await getJSON("workout:" + todayStr());
+        if (!recoveredWorkout) {
+          const wLatest = await getJSON("workout_latest");
+          if (wLatest && wLatest.date === todayStr()) recoveredWorkout = wLatest;
+        }
+      }
+      const tl = await getJSON("trendlog", EMPTY_TRENDLOG);
+      const cl = await getJSON("checklist:" + todayStr(), { calories: false, macros: false, trained: false, journal: false });
+      const hist = {};
+      for (const pat of ["squat", "hinge", "push_horizontal", "pull_horizontal", "pull_vertical", "neck_iso", "rehab_shoulder", "rehab_knee", "rehab_neck"]) {
+        hist[pat] = (await getJSON("history:" + pat, [])) || [];
+      }
+      setProfile(p);
+      setSettings(s);
+      setHistory(hist);
+      setTrendlog(tl);
+      setChecklist(cl);
+      if (c) {
+        setCheckin(c);
+        let w = recoveredWorkout;
+        if (!w) {
+          try { w = buildSessionCore(s.dayIndex, c, hist, tl, s.stages); }
+          catch (e) { console.error("rebuild failed", e); w = null; }
+        }
+        if (w) setSession(w);
+      }
+      setReady(true);
+    })();
+  }, []);
+
+  const flash = (msg) => { setSavedFlash(msg); setTimeout(() => setSavedFlash(""), 2200); };
+
+  async function toggleChecklist(key) {
+    const cl = { ...checklist, [key]: !checklist[key] };
+    setChecklist(cl);
+    await setJSON("checklist:" + todayStr(), cl);
+  }
+
+  async function saveProfile(p, silent) { await setJSON("profile", p); setProfile(p); if (!silent) flash("Profil gespeichert"); }
+
+  async function submitCheckin() {
+    const c = { ...checkinDraft, date: todayStr() };
+    await setJSON("checkin:" + todayStr(), c);
+    await setJSON("checkin_latest", c); // stable fallback key
+    // verify the write actually persisted; warn if storage is unavailable
+    const verify = await getJSON("checkin:" + todayStr());
+    if (!verify) {
+      flash("Achtung: Speichern fehlgeschlagen — Check-in evtl. nicht dauerhaft gesichert.");
+    }
+    let tl = { ...trendlog };
+    const r = readinessScore(c);
+    tl.readiness = upsertByDate(tl.readiness, { date: todayStr(), score: r });
+    tl.pain = upsertByDate(tl.pain, { date: todayStr(), sR: c.painShoulderRest, sL: c.painShoulderLoad, kR: c.painKneeRest, kL: c.painKneeLoad, nR: c.painNeckRest, nL: c.painNeckLoad });
+    if (c.bodyweight && +c.bodyweight > 0) tl.bodyweight = upsertByDate(tl.bodyweight, { date: todayStr(), kg: +c.bodyweight });
+    if (c.actualKcalYesterday && +c.actualKcalYesterday > 0) tl.intake = upsertByDate(tl.intake, { date: todayStr(), kcal: +c.actualKcalYesterday });
+    // login streak
+    tl.loginDates = Array.from(new Set([...(tl.loginDates || []), todayStr()])).sort();
+    const adapt = computeAdaptiveCorrection(profile, tl);
+    tl.tdeeCorrection = adapt.correction;
+    tl.adaptInfo = adapt.info;
+    // Build the session FIRST, then flip the view — so it never renders with a null session
+    let generated = null;
+    try {
+      generated = buildSessionCore(settings.dayIndex, c, history, tl, settings.stages);
+    } catch (e) {
+      console.error("session build failed", e);
+      flash("Fehler beim Erstellen des Plans — bitte erneut versuchen.");
+      return;
+    }
+    setSession(generated);
+    setTrendlog(tl);
+    setCheckin(c);
+    await setJSON("trendlog", tl);
+    await setJSON("workout:" + todayStr(), generated);
+    await setJSON("workout_latest", { ...generated, date: todayStr() });
+    flash("Check-in gespeichert — Plan erstellt");
+  }
+
+  async function saveSetLog(exIdx, sets, exerciseNote) {
+    const s2 = { ...session };
+    s2.exercises[exIdx].loggedSets = sets;
+    s2.exercises[exIdx].exerciseNote = exerciseNote;
+    setSession(s2);
+    await setJSON("workout:" + todayStr(), s2);
+    await setJSON("workout_latest", { ...s2, date: todayStr() });
+  }
+
+  async function finishSession() {
+    const newHist = { ...history };
+    for (const ex of session.exercises) {
+      if (!ex.loggedSets || !ex.loggedSets.length) continue;
+      const arr = newHist[ex.pattern] ? [...newHist[ex.pattern]] : [];
+      if (ex.type === "reps") {
+        const best = ex.loggedSets.reduce((a, b) => {
+          const e1a = a.weight * (1 + (a.reps + (10 - a.rpe)) * 0.0333);
+          const e1b = b.weight * (1 + (b.reps + (10 - b.rpe)) * 0.0333);
+          return e1b > e1a ? b : a;
+        });
+        const e1rm = round25(best.weight * (1 + (best.reps + (10 - best.rpe)) * 0.0333));
+        arr.push({ date: todayStr(), exerciseName: ex.name, type: "reps", weight: best.weight, reps: best.reps, rpe: best.rpe, e1rm, pain: best.pain || 0, note: ex.exerciseNote || "", setsCount: ex.loggedSets.length });
+      } else {
+        const best = ex.loggedSets[ex.loggedSets.length - 1];
+        arr.push({ date: todayStr(), exerciseName: ex.name, type: "iso", durationSec: best.durationSec, load: best.load, pain: best.pain || 0, note: ex.exerciseNote || "", setsCount: ex.loggedSets.length });
+      }
+      newHist[ex.pattern] = arr;
+      await setJSON("history:" + ex.pattern, arr);
+    }
+    setHistory(newHist);
+    let tl = { ...trendlog };
+    tl.sessions = upsertByDate(tl.sessions, { date: todayStr(), sessionRpe: postQ.sessionRpe, dayId: session.dayId });
+    await setJSON("trendlog", tl);
+    setTrendlog(tl);
+    const s2 = { ...session, postQuestionnaire: postQ, completed: true };
+    await setJSON("workout:" + todayStr(), s2);
+    await setJSON("workout_latest", { ...s2, date: todayStr() });
+    setSession(s2);
+    const ns = { ...settings, dayIndex: (settings.dayIndex + 1) % SESSIONS.length };
+    await setJSON("settings", ns);
+    setSettings(ns);
+    const cl = { ...checklist, trained: true, journal: true };
+    setChecklist(cl);
+    await setJSON("checklist:" + todayStr(), cl);
+    flash("Einheit abgeschlossen — nächste Session vorbereitet");
+  }
+
+  async function skipDeload() {
+    const generated = buildSessionCore(settings.dayIndex, checkin, history, trendlog, settings.stages, { skipDeload: true });
+    setSession(generated);
+    await setJSON("workout:" + todayStr(), generated);
+    await setJSON("workout_latest", { ...generated, date: todayStr() });
+    flash("Deload übersprungen — normale Einheit geladen");
+  }
+
+  async function changeStage(lift, delta) {
+    const cur = settings.stages?.[lift] ?? 0;
+    const next = Math.max(0, Math.min(RETURN_STAGES[lift].stages.length - 1, cur + delta));
+    if (next === cur) return;
+    const ns = { ...settings, stages: { ...settings.stages, [lift]: next } };
+    await setJSON("settings", ns);
+    setSettings(ns);
+    if (checkin) {
+      const g = buildSessionCore(ns.dayIndex, checkin, history, trendlog, ns.stages);
+      setSession(g);
+      await setJSON("workout:" + todayStr(), g);
+      await setJSON("workout_latest", { ...g, date: todayStr() });
+    }
+    flash(RETURN_STAGES[lift].label + ": jetzt " + RETURN_STAGES[lift].stages[next].name);
+  }
+
+  if (!ready) return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#0F7B6F 0%,#0A5A51 100%)", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Sans', system-ui, sans-serif", gap: 16 }}>
+      <div style={{ width: 76, height: 76, borderRadius: 18, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.25)" }}>
+        <Dumbbell size={38} color="#fff" />
+      </div>
+      <div style={{ fontFamily: "'IBM Plex Sans Condensed', sans-serif", fontWeight: 700, fontSize: 24, letterSpacing: "0.06em", textTransform: "uppercase" }}>Iron Ledger</div>
+      <div style={{ fontSize: 12, opacity: 0.7, letterSpacing: "0.2em", textTransform: "uppercase" }}>wird geladen…</div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-paper ink" style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        .display { font-family: 'IBM Plex Sans Condensed', sans-serif; letter-spacing: 0.04em; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+        :root { color-scheme: light; }
+        .bg-paper { background: #F6F8F8; }
+        .bg-card { background: #FFFFFF; }
+        .ink { color: #101619; }
+        .muted { color: #67757B; }
+        .accent { color: #0F7B6F; }
+        .danger { color: #C0392B; }
+        .hairline { border-color: #E2E8E9; }
+        .hairline-accent { border-color: rgba(15,123,111,0.4); }
+        .hairline-teal { border-color: #0F7B6F; }
+        .hairline-danger { border-color: rgba(192,57,43,0.5); }
+        .btn-primary { background: #0F7B6F; color: #FFFFFF; }
+        .btn-primary:active { background: #0C665C; }
+        .bar-track { background: #E2E8E9; }
+        .tiny { font-size: 10px; }
+        .tracked { letter-spacing: 0.25em; }
+        input[type=radio], input[type=checkbox] { accent-color: #0F7B6F; width: 16px; height: 16px; }
+        input::placeholder, textarea::placeholder { color: #9AA6AB; }
+        button { font-family: inherit; }
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #E2E8E9; border-radius: 1px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 2px; background: #0F7B6F; cursor: pointer; margin-top: -6px; }
+        summary::-webkit-details-marker { display: none; }
+      `}</style>
+
+      {!profile ? (
+        <SetupScreen onSave={saveProfile} />
+      ) : (
+        <div className="max-w-3xl mx-auto pb-24">
+          <header className="px-5 pt-7 pb-4 flex items-center justify-between border-b hairline">
+            <div className="flex items-center gap-3">
+              <div style={{ width: 42, height: 42, borderRadius: 11, background: "linear-gradient(160deg,#0F7B6F,#0A5A51)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Dumbbell size={22} color="#fff" />
+              </div>
+              <div>
+                <div className="mono tiny uppercase tracked muted">Iron Ledger</div>
+                <div className="display text-xl font-bold uppercase tracking-wide">{new Date().toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "short" })}</div>
+              </div>
+            </div>
+            {checkin && <ReadinessDial value={readinessScore(checkin)} />}
+          </header>
+
+          {savedFlash && (
+            <div className="mx-5 mt-4 bar-track border hairline-accent accent text-sm px-4 py-2 rounded flex items-center gap-2">
+              <Check size={14} /> {savedFlash}
+            </div>
+          )}
+
+          <main className="px-5 pt-5">
+            {tab === "today" && (
+              <TodayTab
+                checkin={checkin} checkinDraft={checkinDraft} setCheckinDraft={setCheckinDraft}
+                showAdvanced={showAdvanced} setShowAdvanced={setShowAdvanced}
+                submitCheckin={submitCheckin} session={session} profile={profile}
+                trendlog={trendlog} onSkipDeload={skipDeload} stages={settings.stages} onChangeStage={changeStage}
+                checklist={checklist} onToggleChecklist={toggleChecklist} history={history}
+              />
+            )}
+            {tab === "log" && (
+              <LogTab session={session} saveSetLog={saveSetLog} postQ={postQ} setPostQ={setPostQ} finishSession={finishSession} />
+            )}
+            {tab === "week" && <WeekTab stages={settings.stages} history={history} trendlog={trendlog} />}
+            {tab === "progress" && <ProgressTab history={history} trendlog={trendlog} />}
+            {tab === "profile" && <ProfileTab profile={profile} onSave={saveProfile} tdeeCorrection={trendlog.tdeeCorrection || 0} />}
+          </main>
+        </div>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t hairline">
+        <div className="max-w-3xl mx-auto grid grid-cols-5">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)} className={`flex flex-col items-center gap-1 py-3 text-xs ${active ? "accent" : "muted"}`}>
+                <Icon size={18} />{t.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+/* ---------- Week overview ---------- */
+
+function WeekTab({ stages }) {
+  const week = buildWeekOverview(stages);
+  const st = { bench: 0, squat: 0, ...(stages || {}) };
+  return (
+    <div className="space-y-6">
+      <section className="bg-card border hairline rounded p-4">
+        <div className="tiny uppercase tracked muted mb-2">Aktuelles Ziel</div>
+        <div className="text-sm ink leading-relaxed">
+          Muskelaufbau bei minimalem Fettzuwachs — Ausrichtung auf die <span className="accent font-medium">DOTS-Rangliste</span> statt Gewichtsklasse. Parallel: stufenweise, schmerzgesteuerte Rückkehr zu Kniebeuge & Bankdrücken. <span className="accent font-medium">Kreuzheben</span> ist schmerzfrei und läuft als Prioritätslift mit voller Progression.
+        </div>
+      </section>
+
+      <section className="bg-card border hairline rounded p-4">
+        <div className="tiny uppercase tracked muted mb-2">Rotation</div>
+        <div className="text-sm ink">4 Einheiten im Kreislauf (A → B → C → D → A …), gekoppelt an abgeschlossene Trainings, nicht an Wochentage.</div>
+        <div className="text-xs muted mt-1">Aktuelle Rückkehr-Stufen: Kniebeuge {RETURN_STAGES.squat.stages[st.squat].name} · Bankdrücken {RETURN_STAGES.bench.stages[st.bench].name}</div>
+      </section>
+
+      <div className="space-y-3">
+        {week.map((day) => (
+          <div key={day.id} className="bg-card border hairline rounded p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="mono text-xs accent border hairline-teal rounded px-1.5 py-0.5">{day.id}</span>
+              <span className="text-sm font-medium ink">{day.label}</span>
+            </div>
+            <ul className="space-y-1">
+              {day.exercises.map((ex, i) => (
+                <li key={i} className="text-xs muted flex justify-between">
+                  <span>{ex.name}</span>
+                  <span className="mono">{ex.type === "reps" ? `${ex.sets}×${ex.reps}` : `${ex.sets}×${ex.durationSec}s`}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="tiny muted leading-relaxed">
+        Hinweis: Diese Ansicht zeigt die Übungen bei deiner aktuellen Rückkehr-Stufe und ohne Tagesschmerz. Der tatsächliche Plan im Tab „Heute" kann bei akutem Schmerz oder niedriger Readiness zusätzlich angepasst sein.
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Setup ---------- */
+
+function SetupScreen({ onSave }) {
+  const [f, setF] = useState({ dob: "2000-01-11", heightCm: 182.5, weightKg: 81.5, sex: "m", bf: 11.3, activityMult: 1.55, targetRateId: "moderate", manualCalories: null });
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="max-w-sm w-full">
+        <div className="display text-3xl font-bold uppercase mb-1">Iron Ledger</div>
+        <div className="text-sm muted mb-6">Einmalige Einrichtung deines Profils.</div>
+        <div className="space-y-4">
+          <Field label="Geburtsdatum"><input type="date" value={f.dob} onChange={(e) => setF({ ...f, dob: e.target.value })} className="input" /></Field>
+          <Field label="Größe (cm)"><input type="number" value={f.heightCm} onChange={(e) => setF({ ...f, heightCm: +e.target.value })} className="input" /></Field>
+          <Field label="Körpergewicht (kg)"><input type="number" value={f.weightKg} onChange={(e) => setF({ ...f, weightKg: +e.target.value })} className="input" /></Field>
+          <Field label="Körperfett (%)"><input type="number" value={f.bf} onChange={(e) => setF({ ...f, bf: +e.target.value })} className="input" /></Field>
+          <Field label="Aktivitätslevel (außerhalb Training)">
+            <select value={f.activityMult} onChange={(e) => setF({ ...f, activityMult: +e.target.value })} className="input">
+              <option value={1.4}>Sitzend</option>
+              <option value={1.55}>Moderat aktiv</option>
+              <option value={1.7}>Sehr aktiv</option>
+            </select>
+          </Field>
+          <button onClick={() => onSave(f)} className="w-full btn-primary font-semibold py-3 rounded mt-2">Profil speichern</button>
+        </div>
+        <style>{`.input{width:100%;background:#FFFFFF;border:1px solid #E2E8E9;color:#101619;padding:10px 12px;border-radius:6px;font-size:14px;}`}</style>
+      </div>
+    </div>
+  );
+}
+function Field({ label, children }) {
+  return (<div><div className="text-xs muted mb-1">{label}</div>{children}</div>);
+}
+
+/* ---------- Readiness dial ---------- */
+
+function ReadinessDial({ value }) {
+  const color = value == null ? "#67757B" : value < 45 ? "#C0392B" : value < 65 ? "#B27A00" : "#0F7B6F";
+  const r = 26, c = 2 * Math.PI * r;
+  return (
+    <div className="relative w-16 h-16 flex items-center justify-center">
+      <svg width="64" height="64" className="-rotate-90">
+        <circle cx="32" cy="32" r={r} stroke="#E2E8E9" strokeWidth="6" fill="none" />
+        <circle cx="32" cy="32" r={r} stroke={color} strokeWidth="6" fill="none" strokeDasharray={c} strokeDashoffset={c - ((value ?? 0) / 100) * c} strokeLinecap="round" />
+      </svg>
+      <div className="absolute display font-bold text-sm" style={{ color }}>{value ?? "–"}</div>
+    </div>
+  );
+}
+
+/* ---------- Today ---------- */
+
+function TodayTab({ checkin, checkinDraft, setCheckinDraft, showAdvanced, setShowAdvanced, submitCheckin, session, profile, trendlog, onSkipDeload, stages, onChangeStage, checklist, onToggleChecklist, history }) {
+  if (!checkin) {
+    const d = checkinDraft;
+    const set = (k, v) => setCheckinDraft({ ...d, [k]: v });
+    return (
+      <div>
+        <div className="text-sm muted mb-4">Morgen-Check-in — legt Ernährung & Training für heute fest.</div>
+        <div className="space-y-5">
+          <SliderField label="Schlaf (Stunden)" min={3} max={10} step={0.5} value={d.sleepHours} onChange={(v) => set("sleepHours", v)} />
+          <SliderField label="Schlafqualität" min={1} max={5} step={1} value={d.sleepQuality} onChange={(v) => set("sleepQuality", v)} />
+          <SliderField label="Stresslevel" min={1} max={5} step={1} value={d.stress} onChange={(v) => set("stress", v)} />
+          <SliderField label="Stimmung / Motivation" min={1} max={5} step={1} value={d.mood} onChange={(v) => set("mood", v)} />
+          <Field label="Körpergewicht heute (kg — wichtig für die lernende Kalorien-Korrektur)">
+            <input type="number" value={d.bodyweight} onChange={(e) => set("bodyweight", e.target.value)} className="w-full bg-card border hairline rounded px-3 py-2 text-sm" />
+          </Field>
+
+          <div className="text-xs uppercase tracking-wide muted pt-3 border-t hairline">Schmerz — getrennt nach Ruhe & Belastung (NRS 0–10)</div>
+          <PainPair label="Schulter" restVal={d.painShoulderRest} loadVal={d.painShoulderLoad} onRest={(v) => set("painShoulderRest", v)} onLoad={(v) => set("painShoulderLoad", v)} />
+          <PainPair label="Knie" restVal={d.painKneeRest} loadVal={d.painKneeLoad} onRest={(v) => set("painKneeRest", v)} onLoad={(v) => set("painKneeLoad", v)} />
+          <PainPair label="Nacken" restVal={d.painNeckRest} loadVal={d.painNeckLoad} onRest={(v) => set("painNeckRest", v)} onLoad={(v) => set("painNeckLoad", v)} />
+
+          <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-xs accent underline">
+            {showAdvanced ? "Erweiterte Variablen ausblenden" : "Erweiterte Variablen einblenden (Ruhepuls, Schritte, Alkohol, Steifigkeit, kcal gestern)"}
+          </button>
+          {showAdvanced && (
+            <div className="space-y-4 bg-card border hairline rounded p-3">
+              <Field label="Ruhepuls heute Morgen (optional, bpm)"><input type="number" value={d.restingHR} onChange={(e) => set("restingHR", e.target.value)} className="w-full bg-paper border hairline rounded px-3 py-2 text-sm" /></Field>
+              <Field label="Geschätzte Schritte gestern (optional)"><input type="number" value={d.neatSteps} onChange={(e) => set("neatSteps", e.target.value)} className="w-full bg-paper border hairline rounded px-3 py-2 text-sm" /></Field>
+              <Field label="Tatsächlich gegessene kcal gestern (optional — macht die TDEE-Korrektur präziser)"><input type="number" value={d.actualKcalYesterday} onChange={(e) => set("actualKcalYesterday", e.target.value)} className="w-full bg-paper border hairline rounded px-3 py-2 text-sm" /></Field>
+              <SliderField label="Alkohol gestern (Einheiten)" min={0} max={8} step={1} value={d.alcoholUnits} onChange={(v) => set("alcoholUnits", v)} />
+              <SliderField label="Morgensteifigkeit allgemein" min={0} max={5} step={1} value={d.stiffness} onChange={(v) => set("stiffness", v)} />
+            </div>
+          )}
+
+          <div className="text-xs uppercase tracking-wide muted pt-3 border-t hairline">Notizen (optional, strukturiert)</div>
+          <textarea placeholder="Schulter — Beobachtungen" value={d.notes.schulter} onChange={(e) => set("notes", { ...d.notes, schulter: e.target.value })} className="notearea" rows={2} />
+          <textarea placeholder="Knie — Beobachtungen" value={d.notes.knie} onChange={(e) => set("notes", { ...d.notes, knie: e.target.value })} className="notearea" rows={2} />
+          <textarea placeholder="Nacken — Beobachtungen" value={d.notes.nacken} onChange={(e) => set("notes", { ...d.notes, nacken: e.target.value })} className="notearea" rows={2} />
+          <textarea placeholder="Sonstiges" value={d.notes.sonstiges} onChange={(e) => set("notes", { ...d.notes, sonstiges: e.target.value })} className="notearea" rows={2} />
+
+          <button onClick={submitCheckin} className="w-full btn-primary font-semibold py-3 rounded">Check-in abschließen</button>
+        </div>
+        <style>{`.notearea{width:100%;background:#FFFFFF;border:1px solid #E2E8E9;border-radius:6px;padding:8px 10px;font-size:13px;color:#101619;}`}</style>
+      </div>
+    );
+  }
+
+  const corr = trendlog.tdeeCorrection || 0;
+  const nutrition = calcNutrition(profile, corr);
+  const info = trendlog.adaptInfo;
+  const streak = computeStreak(trendlog.loginDates);
+  if (!session) {
+    return <div className="text-sm muted py-10 text-center">Plan wird erstellt…</div>;
+  }
+  let coach = null;
+  try { coach = coachSummary(history || {}, trendlog || EMPTY_TRENDLOG, stages); }
+  catch (e) { console.error("coach failed", e); coach = null; }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between bg-card border hairline rounded p-3">
+        <div className="flex items-center gap-2">
+          <Flame size={18} className="accent" />
+          <div>
+            <div className="mono text-lg font-semibold accent leading-none">{streak.current} Tage</div>
+            <div className="tiny muted mt-0.5">Login-Streak in Folge</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="mono text-sm ink">{streak.best}</div>
+          <div className="tiny muted">Bestwert</div>
+        </div>
+      </div>
+
+      <CoachCard coach={coach} />
+      <section>
+        <div className="text-xs uppercase tracking-wide muted mb-2 flex items-center gap-1"><Flame size={13} /> Ernährung heute</div>
+        <div className="grid grid-cols-4 gap-2">
+          <Stat label="kcal" value={nutrition.calories} />
+          <Stat label="Protein" value={nutrition.protein + "g"} />
+          <Stat label="Fett" value={nutrition.fat + "g"} />
+          <Stat label="Carbs" value={nutrition.carbs + "g"} />
+        </div>
+        <div className="text-xs muted mt-2">
+          TDEE ≈ {nutrition.tdee} kcal · Ziel-Rate: {nutrition.rate.label} ({nutrition.rate.pct}%/Woche) · prognostiziert ≈ <span className="accent mono">{nutrition.projectedWeeklyGainKg.toFixed(2)} kg/Wo</span>
+        </div>
+        {info ? (
+          <div className="text-xs accent mt-1">
+            Lernende Korrektur aktiv: {corr >= 0 ? "+" : ""}{corr} kcal auf TDEE — gemessener Trend {info.actualKgWk.toFixed(2)} kg/Wo aus {info.points} Wiegungen{info.usedRealIntake ? `, Ø-Intake ${info.assumedIntake} kcal` : " (Annahme: du isst ≈ Zielkalorien)"}.
+          </div>
+        ) : (
+          <div className="text-xs muted mt-1">
+            Lernende Kalorien-Korrektur startet automatisch ab ~6 Wiegungen über ≥1 Woche — trag dafür morgens dein Gewicht ein.
+          </div>
+        )}
+      </section>
+
+      {session?.deload && (
+        <div className="bg-card border hairline-danger rounded p-3 text-xs">
+          <div className="danger font-medium flex items-center gap-2 mb-1"><AlertTriangle size={14} /> Deload-Einheit — Ermüdungssignale erkannt</div>
+          <div className="muted">Volumen ~−40 %, RPE max. 6. Details unter „Warum sieht heute so aus?".</div>
+          <button onClick={onSkipDeload} className="mt-2 accent underline">Trotzdem normal trainieren</button>
+        </div>
+      )}
+
+      <section>
+        <div className="text-xs uppercase tracking-wide muted mb-2 flex items-center gap-1"><Dumbbell size={13} /> Training — {session?.label}</div>
+        <div className="space-y-2">
+          {(session?.exercises || []).map((ex, i) => <ExerciseCard key={i} ex={ex} />)}
+        </div>
+      </section>
+
+      <section>
+        <div className="text-xs uppercase tracking-wide muted mb-2">Rückkehr-Fahrplan — KDK-Fokus</div>
+        <div className="space-y-2">
+          {["squat", "bench"].map((lift) => {
+            const cfg = RETURN_STAGES[lift];
+            const idx = (stages && stages[lift]) || 0;
+            const st = cfg.stages[idx];
+            const adv = advanceReady(lift, trendlog);
+            return (
+              <div key={lift} className="bg-card border hairline rounded p-3">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium">{cfg.label}</div>
+                  <div className="flex gap-1">
+                    <button onClick={() => onChangeStage(lift, -1)} disabled={idx === 0} className="stgbtn">−</button>
+                    <button onClick={() => onChangeStage(lift, 1)} disabled={idx === cfg.stages.length - 1} className="stgbtn">+</button>
+                  </div>
+                </div>
+                <div className="text-xs accent mt-1">{st.name}</div>
+                <div className="text-xs muted">Aufstiegskriterium: {st.advance}</div>
+                <div className="text-xs mt-1" style={{ color: adv.ready ? "#0F7B6F" : "#67757B" }}>
+                  {adv.ready ? "✓ " : ""}{adv.detail}
+                </div>
+              </div>
+            );
+          })}
+          <div className="bg-card border hairline rounded p-3 text-xs muted">
+            <span className="text-sm font-medium ink">Kreuzheben</span> — schmerzfrei, daher Prioritätslift: volle Progression, 2×/Woche im Plan.
+          </div>
+        </div>
+        <style>{`.stgbtn{background:#F6F8F8;border:1px solid #E2E8E9;border-radius:4px;width:28px;height:28px;color:#101619;} .stgbtn:disabled{opacity:.3;}`}</style>
+      </section>
+
+      <details className="bg-card border hairline rounded p-3">
+        <summary className="text-xs uppercase tracking-wide accent cursor-pointer">Warum sieht heute so aus? ({(session?.decisions || []).length} Entscheidungen)</summary>
+        {(session?.decisions || []).length ? (
+          <ul className="mt-2 space-y-1">
+            {(session?.decisions || []).map((d, i) => <li key={i} className="text-xs muted">• {d}</li>)}
+          </ul>
+        ) : (
+          <div className="text-xs muted mt-2">Keine Anpassungen nötig — Standardplan nach Template, alle Werte im grünen Bereich.</div>
+        )}
+      </details>
+
+      {(checkin.painShoulderRest >= 5 || checkin.painKneeRest >= 5 || checkin.painNeckRest >= 5) && (
+        <div className="text-xs danger bg-card p-3 rounded border hairline">
+          Schmerz ≥5/10 auch in Ruhe — das ist unabhängig vom Training ein Signal für ärztliche/physiotherapeutische Abklärung.
+        </div>
+      )}
+
+      <PhaseCard stages={stages} />
+
+      <MuscleGainCard trendlog={trendlog} />
+
+      <DailyChecklist checklist={checklist} onToggle={onToggleChecklist} nutrition={nutrition} />
+    </div>
+  );
+}
+
+function CoachCard({ coach }) {
+  if (!coach) return null;
+  const { meso, verdicts, vv, headline, tone } = coach;
+  return (
+    <section className="bg-card border rounded p-4" style={{ borderColor: tone === "#67757B" ? "#E2E8E9" : tone }}>
+      <div className="tiny uppercase tracked muted mb-1 flex items-center gap-1"><Target size={12} /> Dein Coach heute</div>
+      <div className="text-sm font-medium" style={{ color: tone }}>{headline}</div>
+      <div className="text-xs muted mt-1">
+        Mesozyklus Block {meso.blockNumber} · Woche {meso.weekInBlock + 1}/5 · <span className="ink">{meso.phase}</span>
+      </div>
+
+      <div className="mt-3 space-y-1">
+        {verdicts.map((x) => (
+          <div key={x.key} className="flex items-center justify-between text-xs">
+            <span className="ink">{x.label}</span>
+            <span style={{ color: x.v.color }}>{x.v.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {vv.recs.length > 0 && (
+        <div className="mt-3 pt-3 border-t hairline">
+          <div className="tiny uppercase tracked muted mb-1">Volumen-Steuerung</div>
+          {vv.recs.slice(0, 4).map((rec, i) => (
+            <div key={i} className="text-xs muted flex items-center gap-1">
+              <span style={{ color: rec.action === "rauf" ? "#0F7B6F" : "#C0392B" }}>{rec.action === "rauf" ? "▲" : "▼"}</span>
+              {rec.detail}
+            </div>
+          ))}
+        </div>
+      )}
+      {vv.avgReadiness != null && (
+        <div className="tiny muted mt-2">Ø-Readiness (4 Tage): {Math.round(vv.avgReadiness)} — {vv.recovering ? "Erholung ok" : "Erholung angespannt, Coach hält Volumen zurück"}</div>
+      )}
+    </section>
+  );
+}
+
+function PhaseCard({ stages }) {
+  const phase = phaseDescription(stages);
+  return (
+    <section className="bg-card border hairline rounded p-4">
+      <div className="tiny uppercase tracked muted mb-1 flex items-center gap-1"><Target size={12} /> Zielphase</div>
+      <div className="text-sm font-medium ink">{phase.title}</div>
+      <div className="text-xs muted mt-1 leading-relaxed">{phase.body}</div>
+    </section>
+  );
+}
+
+function MuscleGainCard({ trendlog }) {
+  const sessionsDone = (trendlog.sessions || []).length;
+  const lean = projectedLeanGain(trendlog, sessionsDone);
+  return (
+    <section className="bg-card border hairline rounded p-4">
+      <div className="tiny uppercase tracked muted mb-1">Geschätzter Muskelmasse-Zuwachs</div>
+      <div className="flex items-baseline gap-2">
+        <span className="mono text-2xl font-semibold accent">≈ {lean.cumulative.toFixed(2)} kg</span>
+        <span className="text-xs muted">kumuliert bei diesem Kurs</span>
+      </div>
+      <div className="text-xs muted mt-1">Aktuelle Rate ≈ {lean.monthly.toFixed(2)} kg/Monat · updatet sich mit jedem Check-in und Gewichtstrend.</div>
+      <div className="tiny muted mt-2 italic">Modellschätzung aus Trainingsstand, Konsistenz und Gewichtsentwicklung — keine Messung. DEXA/Waage bleibt Referenz.</div>
+    </section>
+  );
+}
+
+function DailyChecklist({ checklist, onToggle, nutrition }) {
+  const items = [
+    { key: "calories", label: `Kalorien getroffen (~${nutrition.calories} kcal)` },
+    { key: "macros", label: `Makros getroffen (P ${nutrition.protein} / F ${nutrition.fat} / C ${nutrition.carbs})` },
+    { key: "trained", label: "Training absolviert" },
+    { key: "journal", label: "Journal / Fragebogen ausgefüllt" },
+  ];
+  const done = items.filter((i) => checklist[i.key]).length;
+  const allDone = done === items.length;
+  return (
+    <section className="bg-card border hairline rounded p-4">
+      <div className="tiny uppercase tracked muted mb-2 flex items-center gap-1"><ListChecks size={12} /> Tages-Checkliste</div>
+      <div className="space-y-2">
+        {items.map((it) => (
+          <button key={it.key} onClick={() => onToggle(it.key)} className="w-full flex items-center gap-3 text-left">
+            <span className="check-box" style={{ background: checklist[it.key] ? "#0F7B6F" : "transparent", borderColor: checklist[it.key] ? "#0F7B6F" : "#C4CED1" }}>
+              {checklist[it.key] && <Check size={12} color="#fff" />}
+            </span>
+            <span className={`text-sm ${checklist[it.key] ? "muted line-through" : "ink"}`}>{it.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 h-1.5 bar-track rounded">
+        <div className="h-1.5 rounded" style={{ width: (done / items.length) * 100 + "%", background: allDone ? "#0F7B6F" : "#B27A00", transition: "width .3s" }} />
+      </div>
+      {allDone ? (
+        <div className="mt-2 text-sm accent font-medium">Alles erledigt — perfekter Tag. Genau diese Konstanz bringt dich auf der DOTS-Liste nach vorn.</div>
+      ) : (
+        <div className="mt-2 text-xs muted">{done}/{items.length} erledigt — dranbleiben.</div>
+      )}
+      <style>{`.check-box{width:20px;height:20px;border:1.5px solid;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}`}</style>
+    </section>
+  );
+}
+
+function PainPair({ label, restVal, loadVal, onRest, onLoad }) {
+  return (
+    <div className="bg-card border hairline rounded p-3">
+      <div className="text-sm font-medium mb-2">{label}</div>
+      <SliderField label="in Ruhe" min={0} max={10} step={1} value={restVal} onChange={onRest} accent="#67757B" showLabel={painLabel} />
+      <div className="h-2" />
+      <SliderField label="unter Belastung" min={0} max={10} step={1} value={loadVal} onChange={onLoad} accent="#C0392B" showLabel={painLabel} />
+    </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div className="bg-card border hairline rounded p-2 text-center">
+      <div className="mono text-lg font-semibold">{value}</div>
+      <div className="tiny muted uppercase">{label}</div>
+    </div>
+  );
+}
+
+function ExerciseCard({ ex }) {
+  return (
+    <div className={`bg-card border rounded p-3 ${ex.isRehab ? "hairline-accent" : "hairline"}`}>
+      <div className="flex justify-between items-start">
+        <div className="font-medium text-sm">{ex.isRehab && <span className="accent tiny uppercase mr-1">Reha</span>}{ex.name}</div>
+        {ex.recommendedWeight && <div className="mono accent text-sm">{ex.recommendedWeight} kg</div>}
+      </div>
+      <div className="text-xs muted mt-1">
+        {ex.type === "reps" ? `${ex.sets} x ${ex.reps} @ RPE ${ex.rpeTarget} (${rpeLabel(ex.rpeTarget)})` : `${ex.sets} x ${ex.durationSec}s Halten`}
+        {ex.deloaded && <span className="danger"> · Deload</span>}
+        {ex.dupFocus && !ex.isRehab && <span className="accent"> · {ex.dupFocus}</span>}
+      </div>
+      {ex.note && <div className="text-xs muted mt-1 italic">{ex.note}</div>}
+      {ex.perSet && ex.perSet.length > 1 && (
+        <div className="flex gap-1 mt-2 flex-wrap">
+          {ex.perSet.map((w, i) => (
+            <span key={i} className="mono tiny bar-track ink rounded px-1.5 py-0.5">S{i + 1}: {w}kg</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SliderField({ label, min, max, step, value, onChange, accent = "#0F7B6F", showLabel }) {
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="muted">{label}</span>
+        <span className="mono" style={{ color: accent }}>{value}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(+e.target.value)} className="w-full" />
+      {showLabel && <div className="tiny muted mt-0.5">{showLabel(value)}</div>}
+    </div>
+  );
+}
+
+/* ---------- Log ---------- */
+
+function LogTab({ session, saveSetLog, postQ, setPostQ, finishSession }) {
+  if (!session) return <div className="text-sm muted">Mach zuerst dein Morgen-Check-in im Tab "Heute".</div>;
+
+  return (
+    <div className="space-y-6">
+      {session.exercises.map((ex, i) => (
+        <ExerciseLogger key={ex.name + i} ex={ex} onSave={(sets, note) => saveSetLog(i, sets, note)} />
+      ))}
+
+      {!session.completed && (
+        <section className="border-t hairline pt-4">
+          <div className="text-xs uppercase tracking-wide muted mb-2">Fragebogen nach dem Training</div>
+          <SliderField label="Gesamt-RPE der Einheit" min={1} max={10} step={1} value={postQ.sessionRpe} onChange={(v) => setPostQ({ ...postQ, sessionRpe: v })} showLabel={rpeLabel} />
+          <textarea placeholder="Technik — was ist aufgefallen?" value={postQ.notes.technik} onChange={(e) => setPostQ({ ...postQ, notes: { ...postQ.notes, technik: e.target.value } })} className="notearea2" rows={2} />
+          <textarea placeholder="Schmerz — Verlauf während der Einheit" value={postQ.notes.schmerz} onChange={(e) => setPostQ({ ...postQ, notes: { ...postQ.notes, schmerz: e.target.value } })} className="notearea2" rows={2} />
+          <textarea placeholder="Sonstiges" value={postQ.notes.sonstiges} onChange={(e) => setPostQ({ ...postQ, notes: { ...postQ.notes, sonstiges: e.target.value } })} className="notearea2" rows={2} />
+          <button onClick={finishSession} className="w-full btn-primary font-semibold py-3 rounded mt-3">Einheit abschließen & speichern</button>
+          <style>{`.notearea2{width:100%;background:#FFFFFF;border:1px solid #E2E8E9;border-radius:6px;padding:8px 10px;font-size:13px;color:#101619;margin-top:8px;}`}</style>
+        </section>
+      )}
+      {session.completed && <div className="text-sm accent flex items-center gap-2"><Check size={16} /> Einheit gespeichert. Das System hat die Daten in Ermüdungs-, Volumen- und Kalorien-Logik übernommen.</div>}
+    </div>
+  );
+}
+
+function ExerciseLogger({ ex, onSave }) {
+  const [sets, setSets] = useState(ex.loggedSets || Array.from({ length: ex.sets }, () => (ex.type === "reps" ? { weight: ex.recommendedWeight || "", reps: ex.reps, rpe: ex.rpeTarget, pain: 0 } : { durationSec: ex.durationSec, load: "", pain: 0 })));
+  const [note, setNote] = useState(ex.exerciseNote || "");
+
+  const update = (idx, field, val) => {
+    const s2 = sets.map((s, i) => (i === idx ? { ...s, [field]: val } : s));
+    setSets(s2);
+    onSave(s2, note);
+  };
+  const updateNote = (v) => { setNote(v); onSave(sets, v); };
+
+  return (
+    <div className="bg-card border hairline rounded p-3">
+      <div className="font-medium text-sm mb-2">{ex.isRehab && <span className="accent tiny uppercase mr-1">Reha</span>}{ex.name}</div>
+      <div className="space-y-2">
+        {sets.map((s, i) => (
+          <div key={i} className="grid grid-cols-4 gap-2 items-center">
+            <span className="text-xs muted mono">S{i + 1}</span>
+            {ex.type === "reps" ? (
+              <>
+                <input type="number" value={s.weight} onChange={(e) => update(i, "weight", +e.target.value)} placeholder="kg" className="mini" />
+                <input type="number" value={s.reps} onChange={(e) => update(i, "reps", +e.target.value)} placeholder="Wdh" className="mini" />
+                <input type="number" value={s.rpe} onChange={(e) => update(i, "rpe", +e.target.value)} placeholder="RPE" className="mini" title={rpeLabel(s.rpe)} />
+              </>
+            ) : (
+              <>
+                <input type="number" value={s.durationSec} onChange={(e) => update(i, "durationSec", +e.target.value)} placeholder="Sek" className="mini" />
+                <input type="text" value={s.load} onChange={(e) => update(i, "load", e.target.value)} placeholder="Last" className="mini" />
+                <input type="number" value={s.pain} onChange={(e) => update(i, "pain", +e.target.value)} placeholder="Schmerz" className="mini" title={painLabel(s.pain)} />
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+      <input type="text" value={note} onChange={(e) => updateNote(e.target.value)} placeholder="Notiz zu dieser Übung (Technik, Gefühl, Schmerzverlauf...)" className="mini mt-2" style={{ width: "100%" }} />
+      <style>{`.mini{background:#F6F8F8;border:1px solid #E2E8E9;border-radius:4px;padding:6px;font-size:12px;color:#101619;width:100%;}`}</style>
+    </div>
+  );
+}
+
+/* ---------- Progress ---------- */
+
+function PsychTable({ trendlog }) {
+  const rows = [...(trendlog.readiness || [])].slice(-10).reverse();
+  const checkins = trendlog.pain || [];
+  const rl = trendlog.readiness || [];
+  const scoreColor = (s) => (s == null ? "#67757B" : s < 45 ? "#C0392B" : s < 65 ? "#B27A00" : "#0F7B6F");
+  return (
+    <section>
+      <div className="text-xs uppercase tracking-wide muted mb-2">Psychischer & körperlicher Zustand (letzte Check-ins)</div>
+      {rows.length ? (
+        <div className="bg-card border hairline rounded overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="muted" style={{ background: "#F0F4F4" }}>
+                <th className="text-left p-2 font-medium">Datum</th>
+                <th className="text-right p-2 font-medium">Readiness</th>
+                <th className="text-right p-2 font-medium">Zustand</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const label = r.score < 45 ? "müde / belastet" : r.score < 65 ? "okay" : "frisch / motiviert";
+                return (
+                  <tr key={i} className="border-t hairline">
+                    <td className="p-2 mono ink">{r.date.slice(5)}</td>
+                    <td className="p-2 text-right mono font-semibold" style={{ color: scoreColor(r.score) }}>{r.score}</td>
+                    <td className="p-2 text-right" style={{ color: scoreColor(r.score) }}>{label}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-xs muted">Ab dem ersten Check-in erscheint hier deine Verlaufstabelle.</div>
+      )}
+    </section>
+  );
+}
+
+function OneRMTable({ history }) {
+  return (
+    <section>
+      <div className="text-xs uppercase tracking-wide muted mb-2">1RM-Progression — Big Three (geschätzt aus RPE)</div>
+      <div className="bg-card border hairline rounded overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="muted" style={{ background: "#F0F4F4" }}>
+              <th className="text-left p-2 font-medium">Lift</th>
+              <th className="text-right p-2 font-medium">Start</th>
+              <th className="text-right p-2 font-medium">Aktuell</th>
+              <th className="text-right p-2 font-medium">Δ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {BIG_THREE.map((l) => {
+              const first = firstE1RM(history, l.key);
+              const cur = currentE1RM(history, l.key);
+              const delta = first != null && cur != null ? cur - first : null;
+              return (
+                <tr key={l.key} className="border-t hairline">
+                  <td className="p-2 ink font-medium">{l.label}</td>
+                  <td className="p-2 text-right mono ink">{first != null ? first + " kg" : "—"}</td>
+                  <td className="p-2 text-right mono ink">{cur != null ? cur + " kg" : "—"}</td>
+                  <td className="p-2 text-right mono font-semibold" style={{ color: delta == null ? "#67757B" : delta >= 0 ? "#0F7B6F" : "#C0392B" }}>
+                    {delta != null ? (delta >= 0 ? "+" : "") + delta.toFixed(1) + " kg" : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="tiny muted mt-1 italic">e1RM aus Gewicht × Wdh × RPE (Epley/RIR). Wird mit jeder geloggten Einheit aktualisiert.</div>
+    </section>
+  );
+}
+
+function GeneticBell({ history, sessionsDone }) {
+  // Use squat+bench+deadlift average monthly gain as the response proxy
+  const gains = BIG_THREE.map((l) => monthlyGainForLift(history, l.key, sessionsDone)).filter((g) => g != null);
+  const userGain = gains.length ? gains.reduce((a, b) => a + b, 0) / gains.length : null;
+  const bell = bellData(userGain);
+  const cls = userGain != null ? classifyResponse(userGain) : null;
+
+  return (
+    <section>
+      <div className="text-xs uppercase tracking-wide muted mb-2">Reaktions-Einordnung — wie schnell du zulegst</div>
+      <div className="bg-card border hairline rounded p-3">
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={bell.pts} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+            <defs>
+              {RESPONSE_BANDS.map((b, i) => (
+                <linearGradient key={i} id={"g" + i} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={b.color} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={b.color} stopOpacity={0.05} />
+                </linearGradient>
+              ))}
+            </defs>
+            <XAxis dataKey="x" type="number" domain={[0, 9]} stroke="#67757B" fontSize={10} ticks={[0, 1.5, 3.5, 6, 9]} tickFormatter={(v) => v + ""} label={{ value: "kg/Monat e1RM", position: "insideBottom", offset: -4, fontSize: 10, fill: "#67757B" }} />
+            <YAxis hide domain={[0, 1.1]} />
+            {RESPONSE_BANDS.map((b, i) => (
+              <ReferenceLine key={i} x={b.hi} stroke="#E2E8E9" />
+            ))}
+            <Area type="monotone" dataKey="y" stroke="#67757B" strokeWidth={1.5} fill="url(#g1)" />
+            {userGain != null && <ReferenceLine x={Math.min(9, userGain)} stroke={cls.color} strokeWidth={2} label={{ value: "Du", position: "top", fontSize: 11, fill: cls.color }} />}
+          </AreaChart>
+        </ResponsiveContainer>
+        <div className="grid grid-cols-4 gap-1 mt-1">
+          {RESPONSE_BANDS.map((b) => (
+            <div key={b.label} className="text-center">
+              <div className="h-1.5 rounded" style={{ background: b.color }} />
+              <div className="tiny muted mt-1">{b.label}</div>
+            </div>
+          ))}
+        </div>
+        {userGain != null ? (
+          <div className="text-sm mt-3" style={{ color: cls.color }}>
+            Deine bisherige Rate: <span className="mono font-semibold">{userGain.toFixed(1)} kg/Monat</span> → Einordnung: <span className="font-medium">{cls.label}</span>
+          </div>
+        ) : (
+          <div className="text-xs muted mt-3">Nach ein paar geloggten Einheiten wird hier deine Position auf der Kurve markiert.</div>
+        )}
+        <div className="tiny muted mt-2 italic">Wichtig: Das ist eine Einordnung deines bisherigen Fortschritts gegen grobe Populations-Richtwerte — keine DNA-/Genanalyse. Frühe Werte schwanken stark.</div>
+      </div>
+    </section>
+  );
+}
+
+function WeightTrendSection({ trendlog }) {
+  const raw = [...(trendlog.bodyweight || [])].filter((e) => e.kg > 0).sort((a, b) => a.date.localeCompare(b.date));
+  const data = raw.map((e) => ({ date: e.date.slice(5), kg: e.kg }));
+  const trend = computeWeightTrend(trendlog.bodyweight);
+  return (
+    <section>
+      <div className="text-xs uppercase tracking-wide muted mb-2">Gewichtstrend</div>
+      {data.length >= 2 ? (
+        <div className="bg-card border hairline rounded p-3">
+          <ResponsiveContainer width="100%" height={170}>
+            <LineChart data={data}>
+              <CartesianGrid stroke="#E2E8E9" />
+              <XAxis dataKey="date" stroke="#67757B" fontSize={11} />
+              <YAxis domain={["dataMin - 1", "dataMax + 1"]} stroke="#67757B" fontSize={11} tickFormatter={(v) => v.toFixed(1)} />
+              <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E2E8E9" }} />
+              <Line type="monotone" dataKey="kg" stroke="#0F7B6F" strokeWidth={2} dot={{ r: 2 }} />
+            </LineChart>
+          </ResponsiveContainer>
+          {trend && (
+            <div className="text-xs muted mt-1">
+              Gleitender Trend: <span className="mono" style={{ color: trend.kgPerWeek >= 0 ? "#0F7B6F" : "#C0392B" }}>{trend.kgPerWeek >= 0 ? "+" : ""}{trend.kgPerWeek.toFixed(2)} kg/Woche</span> aus {trend.points} Wiegungen (nutzt gemittelte Fenster, nicht Tagesrauschen).
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-xs muted">Trag morgens beim Check-in dein Gewicht ein — ab 2 Einträgen erscheint hier der Verlauf.</div>
+      )}
+    </section>
+  );
+}
+
+/* ---------- ProgressTab main ---------- */
+function ProgressTab({ history, trendlog }) {
+  const patterns = [
+    { key: "hinge", label: "Kreuzheben-Muster (e1RM)" },
+    { key: "squat", label: "Kniebeuge-Muster (e1RM)" },
+    { key: "push_horizontal", label: "Bankdrück-Muster (e1RM)" },
+  ];
+  const vol = computeWeeklyVolume(history);
+  const painData = (trendlog.pain || []).map((p) => ({ date: p.date.slice(5), Schulter: p.sL, Knie: p.kL, Nacken: p.nL }));
+  const sessionsDone = (trendlog.sessions || []).length;
+
+  return (
+    <div className="space-y-8">
+      <PsychTable trendlog={trendlog} />
+      <OneRMTable history={history} />
+      <GeneticBell history={history} sessionsDone={sessionsDone} />
+
+      <section>
+        <div className="text-xs uppercase tracking-wide muted mb-3">Wochenvolumen pro Muskelgruppe (Sätze, letzte 7 Tage)</div>
+        <div className="space-y-3">
+          {Object.entries(MUSCLE_LANDMARKS).map(([m, land]) => {
+            const sets = vol[m] || 0;
+            const st = volumeStatus(sets, land);
+            const pct = Math.min(100, (sets / land.mrv) * 100);
+            return (
+              <div key={m}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span>{MUSCLE_DE[m]}</span>
+                  <span className="mono" style={{ color: st.color }}>{sets} — {st.label}</span>
+                </div>
+                <div className="h-1.5 bar-track rounded">
+                  <div className="h-1.5 rounded" style={{ width: pct + "%", background: st.color }} />
+                </div>
+                <div className="tiny muted mt-0.5 mono">MEV {land.mev} · MAV {land.mav} · MRV {land.mrv}</div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <div className="text-xs uppercase tracking-wide muted mb-2">Schmerzverlauf unter Belastung (NRS 0–10)</div>
+        {painData.length >= 2 ? (
+          <ResponsiveContainer width="100%" height={170}>
+            <LineChart data={painData}>
+              <CartesianGrid stroke="#E2E8E9" />
+              <XAxis dataKey="date" stroke="#67757B" fontSize={11} />
+              <YAxis domain={[0, 10]} stroke="#67757B" fontSize={11} />
+              <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E2E8E9" }} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Line type="monotone" dataKey="Schulter" stroke="#C0392B" strokeWidth={2} dot={{ r: 2 }} />
+              <Line type="monotone" dataKey="Knie" stroke="#B27A00" strokeWidth={2} dot={{ r: 2 }} />
+              <Line type="monotone" dataKey="Nacken" stroke="#67757B" strokeWidth={2} dot={{ r: 2 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-xs muted">Ab 2 Check-ins entsteht hier dein Schmerz-Trend.</div>
+        )}
+      </section>
+
+      <WeightTrendSection trendlog={trendlog} />
+
+      {patterns.map((p) => {
+        const data = (history[p.key] || []).filter((h) => h.type === "reps").map((h) => ({ date: h.date.slice(5), e1rm: h.e1rm }));
+        return (
+          <section key={p.key}>
+            <div className="text-xs uppercase tracking-wide muted mb-2">{p.label}</div>
+            {data.length ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={data}>
+                  <CartesianGrid stroke="#E2E8E9" />
+                  <XAxis dataKey="date" stroke="#67757B" fontSize={11} />
+                  <YAxis stroke="#67757B" fontSize={11} />
+                  <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E2E8E9" }} />
+                  <Line type="monotone" dataKey="e1rm" stroke="#0F7B6F" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-xs muted">Noch keine Daten geloggt.</div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- Profile ---------- */
+
+function ProfileTab({ profile, onSave, tdeeCorrection }) {
+  const [f, setF] = useState({ targetRateId: "moderate", manualCalories: null, ...profile });
+  const [whatIfKcal, setWhatIfKcal] = useState("");
+  const [savedTick, setSavedTick] = useState(false);
+
+  // Resync local form whenever the stored profile changes (e.g. after returning to this tab)
+  useEffect(() => {
+    setF({ targetRateId: "moderate", manualCalories: null, ...profile });
+  }, [profile]);
+
+  const preview = calcNutrition(f, tdeeCorrection);
+  const wi = whatIfKcal ? { weekly: ((+whatIfKcal - preview.tdee) * 7) / 7700 } : null;
+
+  // Auto-save with debounce so nothing is lost on tab switch
+  const commit = (next) => {
+    setF(next);
+    onSave(next, true); // silent persist
+    setSavedTick(true);
+    clearTimeout(window.__profSaveTO);
+    window.__profSaveTO = setTimeout(() => setSavedTick(false), 1200);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-wide muted">Profil</div>
+        {savedTick && <span className="tiny accent">✓ automatisch gespeichert</span>}
+      </div>
+      <section className="space-y-4">
+        <Field label="Größe (cm)"><input type="number" value={f.heightCm} onChange={(e) => commit({ ...f, heightCm: +e.target.value })} className="w-full bg-card border hairline rounded px-3 py-2 text-sm" /></Field>
+        <Field label="Körpergewicht (kg)"><input type="number" value={f.weightKg} onChange={(e) => commit({ ...f, weightKg: +e.target.value })} className="w-full bg-card border hairline rounded px-3 py-2 text-sm" /></Field>
+        <Field label="Körperfett (%)"><input type="number" value={f.bf} onChange={(e) => commit({ ...f, bf: +e.target.value })} className="w-full bg-card border hairline rounded px-3 py-2 text-sm" /></Field>
+      </section>
+
+      <section className="border-t hairline pt-4">
+        <div className="text-xs uppercase tracking-wide muted mb-3">Regler: gewünschte Zunahmerate</div>
+        <div className="space-y-2">
+          {RATE_OPTIONS.map((r) => (
+            <label key={r.id} className={`flex items-center justify-between p-3 rounded border cursor-pointer ${f.targetRateId === r.id ? "hairline-teal bg-card" : "hairline"}`}>
+              <div>
+                <div className="text-sm font-medium">{r.label} — {r.pct}%/Woche</div>
+                <div className="text-xs muted">{r.desc}</div>
+              </div>
+              <input type="radio" checked={f.targetRateId === r.id} onChange={() => commit({ ...f, targetRateId: r.id, manualCalories: null })} />
+            </label>
+          ))}
+        </div>
+        <div className="text-xs muted mt-2">
+          → berechnet: {preview.calculatedCalories} kcal/Tag (TDEE {preview.tdee} inkl. lernender Korrektur {tdeeCorrection >= 0 ? "+" : ""}{tdeeCorrection} kcal)
+        </div>
+      </section>
+
+      <section className="border-t hairline pt-4">
+        <div className="text-xs uppercase tracking-wide muted mb-2">Eigene Kalorienvorgabe (überschreibt den Regler)</div>
+        <input type="number" placeholder="z.B. 3200" value={f.manualCalories || ""} onChange={(e) => commit({ ...f, manualCalories: e.target.value ? +e.target.value : null })} className="w-full bg-card border hairline rounded px-3 py-2 text-sm" />
+        {f.manualCalories && (
+          <div className="text-xs accent mt-2">
+            Bei {f.manualCalories} kcal/Tag: prognostizierte Zunahme ≈ {(((f.manualCalories - preview.tdee) * 7) / 7700).toFixed(2)} kg/Woche
+          </div>
+        )}
+      </section>
+
+      <section className="border-t hairline pt-4">
+        <div className="text-xs uppercase tracking-wide muted mb-2">Was-wäre-wenn-Rechner</div>
+        <input type="number" placeholder="Hypothetische kcal/Tag eingeben" value={whatIfKcal} onChange={(e) => setWhatIfKcal(e.target.value)} className="w-full bg-card border hairline rounded px-3 py-2 text-sm" />
+        {wi && (
+          <div className="text-xs muted mt-2">
+            → ≈ <span className="accent mono">{wi.weekly.toFixed(2)} kg/Woche</span> · ≈ {(wi.weekly * 4.345).toFixed(1)} kg/Monat (grobe Schätzung; bei hohem Überschuss ist ein Teil davon Fettmasse)
+          </div>
+        )}
+      </section>
+
+      <section className="border-t hairline pt-4">
+        <div className="text-xs uppercase tracking-wide muted mb-2">Datensicherung</div>
+        <div className="flex gap-2">
+          <button onClick={async () => {
+            const dump = await exportAllData();
+            const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "ironledger-backup-" + todayStr() + ".json";
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          }} className="flex-1 btn-primary font-semibold py-2 rounded text-sm">Backup exportieren</button>
+          <label className="flex-1 bg-card border hairline-teal accent font-semibold py-2 rounded text-sm text-center cursor-pointer">
+            Backup laden
+            <input type="file" accept="application/json" style={{ display: "none" }} onChange={async (e) => {
+              const file = e.target.files[0]; if (!file) return;
+              try { const txt = await file.text(); const obj = JSON.parse(txt); const n = await importAllData(obj); alert("Backup geladen (" + n + " Einträge). App wird neu geladen."); location.reload(); }
+              catch (err) { alert("Fehler beim Laden: " + err.message); }
+            }} />
+          </label>
+        </div>
+        <div className="tiny muted mt-2">Sichere regelmäßig ein Backup — es enthält alle deine Trainings-, Check-in- und Verlaufsdaten als Datei.</div>
+      </section>
+
+      <div className="text-xs accent bg-card border hairline-accent rounded p-3">Alle Änderungen werden automatisch gespeichert — kein Extra-Klick nötig.</div>
+
+      <div className="text-xs muted pt-4 border-t hairline leading-relaxed">
+        Alter: {calcAge(f.dob)} Jahre. Dieses Tool steuert Training und Ernährung regelbasiert und lernt aus deinen Daten (Gewichtstrend, Readiness, e1RM, Session-RPE). Jede Entscheidung ist im „Warum"-Panel nachvollziehbar. Es ersetzt keine ärztliche oder physiotherapeutische Diagnostik — bei anhaltenden Ruheschmerzen bitte fachlich abklären lassen.
+      </div>
+    </div>
+  );
+}
+
+
+// ---- Mount ----
+try {
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(React.createElement(IronLedger));
+} catch (e) {
+  document.getElementById("root").innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">MOUNT-FEHLER:\n' + (e && e.message ? e.message : e) + '\n\n' + (e && e.stack ? e.stack : '') + '</div>';
+  console.error(e);
+}
+
+</script>
+<script>
+// Register a tiny service worker for offline/PWA (optional, best-effort)
+if ("serviceWorker" in navigator) {
+  const swCode = "self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});";
+  const blob = new Blob([swCode], { type: "application/javascript" });
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
+</body>
+</html>
