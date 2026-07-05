@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Iron Ledger</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Iron Ledger" />
+<meta name="theme-color" content="#000000" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #000000; color: #F5F5F7;
+    font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 0 18px 100px; }
+  header { padding: 28px 0 16px; display: flex; align-items: center; gap: 14px; }
+  .icon { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(160deg,#30D158,#0A8F3C);
+    display: flex; align-items: center; justify-content: center; color: #000; font-weight: 800; font-size: 17px; }
+  h1 { font-size: 26px; margin: 0; letter-spacing: -0.02em; font-weight: 700; }
+  .sub { font-size: 13px; color: #8E8E93; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #8E8E93; margin: 26px 0 10px; font-weight: 600; }
+  .card { background: #1C1C1E; border: none; border-radius: 16px; padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+  label { display: block; font-size: 14px; color: #8E8E93; margin: 12px 0 5px; }
+  input, select { width: 100%; padding: 12px 14px; border: 1px solid #38383A; border-radius: 10px;
+    font-size: 16px; background: #2C2C2E; color: #F5F5F7; }
+  input::placeholder { color: #636366; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .slider-val { float: right; font-family: ui-monospace, monospace; color: #30D158; font-weight: 700; }
+  input[type=range] { -webkit-appearance: none; background: transparent; padding: 0; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #38383A; border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%;
+    background: #F5F5F7; margin-top: -10px; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+  input[type=checkbox] { width: auto; accent-color: #30D158; }
+  button { width: 100%; padding: 15px; border: none; border-radius: 12px; background: #30D158; color: #000;
+    font-size: 16px; font-weight: 700; cursor: pointer; }
+  button:active { opacity: 0.7; }
+  button.ghost { background: #2C2C2E; color: #30D158; border: none; }
+  button.small { width: auto; padding: 9px 16px; font-size: 14px; }
+  .stat { display: inline-block; background: #1C1C1E; border-radius: 14px; padding: 12px 4px; text-align: center; }
+  .stat .n { font-family: ui-monospace, monospace; font-size: 20px; font-weight: 700; color: #F5F5F7; }
+  .stat .l { font-size: 10px; color: #8E8E93; text-transform: uppercase; letter-spacing: .04em; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .ex { background: #1C1C1E; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+  .ex .nm { font-weight: 600; font-size: 15px; }
+  .ex .meta { font-size: 13px; color: #8E8E93; margin-top: 3px; }
+  .ex .note { font-size: 12px; color: #8E8E93; font-style: italic; margin-top: 5px; }
+  .setrow { display: grid; grid-template-columns: 30px 1fr 1fr 1fr; gap: 7px; align-items: center; margin-top: 7px; }
+  .setrow span { font-size: 13px; color: #8E8E93; font-family: ui-monospace, monospace; }
+  .setrow input { padding: 9px; font-size: 14px; }
+  nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(28,28,30,0.92);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid #38383A; display: flex;
+    padding-bottom: env(safe-area-inset-bottom); }
+  nav button { background: none; color: #8E8E93; border-radius: 0; padding: 11px 4px; font-size: 10px; font-weight: 500; }
+  nav button.active { color: #30D158; }
+  .flash { position: fixed; bottom: 80px; left: 18px; right: 18px; background: #30D158; color: #000;
+    padding: 14px; border-radius: 12px; text-align: center; font-size: 15px; font-weight: 600; z-index: 100; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 8px; text-align: left; border-bottom: 0.5px solid #38383A; }
+  th { color: #8E8E93; font-weight: 500; font-size: 11px; text-transform: uppercase; }
+  td.n { font-family: ui-monospace, monospace; text-align: right; }
+  .warn { background: #1C1C1E; border: 1px solid rgba(255,69,58,.4); color: #FF453A; padding: 14px;
+    border-radius: 12px; font-size: 13px; margin-top: 12px; }
+  .muted { color: #8E8E93; font-size: 13px; }
+  .painblock { background: #1C1C1E; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+  .painblock .t { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  /* status colors */
+  .ok { color: #30D158; } .warnc { color: #FFD60A; } .bad { color: #FF453A; }
+  .pill { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 12px; font-weight: 600; }
+  .pill.ok { background: rgba(48,209,88,.18); color: #30D158; }
+  .pill.warnc { background: rgba(255,214,10,.18); color: #FFD60A; }
+  .pill.bad { background: rgba(255,69,58,.18); color: #FF453A; }
+  svg { display: block; width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">Lädt…</div>
+<nav id="nav"></nav>
+<div id="flash"></div>
+
+<script>
+"use strict";
+
+/* ---------- storage (dual: localStorage + IndexedDB fallback is overkill; localStorage is reliable here) ---------- */
+function save(key, val) {
+  try { localStorage.setItem("il_" + key, JSON.stringify(val)); return true; }
+  catch (e) { alert("Speichern fehlgeschlagen: " + e.message); return false; }
+}
+function load(key, fallback) {
+  try { var v = localStorage.getItem("il_" + key); return v ? JSON.parse(v) : fallback; }
+  catch (e) { return fallback; }
+}
+
+/* ---------- date ---------- */
+function today() {
+  var d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+function round25(x) { return Math.round(x / 2.5) * 2.5; }
+
+/* ---------- state ---------- */
+var profile = load("profile", null);
+var settings = load("settings", { dayIndex: 0 });
+var checkinToday = load("checkin_" + today(), null);
+var workoutToday = load("workout_" + today(), null);
+var trend = load("trend", { bw: [], e1rm: {}, pain: [], logins: [] });
+var tab = "today";
+
+/* ---------- training templates ---------- */
+var SESSIONS = [
+  { id: "A", label: "Unterkörper – Zug", slots: ["hinge", "squat", "core"] },
+  { id: "B", label: "Oberkörper – Push/Pull", slots: ["push", "row", "pull", "neck"] },
+  { id: "C", label: "Unterkörper – Druck", slots: ["squat", "hinge", "core"] },
+  { id: "D", label: "Oberkörper – Pull-Fokus", slots: ["pull", "row", "pushlight", "neck"] }
+];
+
+/* ---------- exercise classification ----------
+   cls: 'barbell' (free compound), 'machine' (machine hypertrophy), 'iso' (isolation/accessory), 'isom' (isometric hold)
+   e1rmKey: which strength curve this counts toward — machines/isolation do NOT merge into the free-barbell lifts. */
+function pickSquat(kneePain) {
+  if (kneePain >= 6) return { pat: "squat", e1rmKey: null, cls: "isom", nm: "Spanish Squat (isometrisch)", type: "iso", sets: 5, sec: 45, note: "Isometrie wirkt bei Patellasehnen-Reizung oft schmerzdämpfend. Schmerz beim Halten max. 3/10." };
+  if (kneePain >= 3) return { pat: "squat", e1rmKey: "legpress", cls: "machine", nm: "Beinpresse (ROM < 90°)", type: "reps", sets: 3, reps: 8, rpe: 7, note: "Maschine – wird SEPARAT von der freien Kniebeuge getrackt. Tiefe begrenzen, kein Schmerz über 3/10." };
+  return { pat: "squat", e1rmKey: "squat", cls: "barbell", nm: "Kniebeuge (High-Bar)", type: "reps", sets: 4, reps: 5, rpe: 8 };
+}
+function pickHinge(kneePain) {
+  return { pat: "hinge", e1rmKey: "hinge", cls: "barbell", nm: "Kreuzheben", type: "reps", sets: 4, reps: 5, rpe: kneePain >= 6 ? 7 : 8, note: "Prioritätslift – hier läuft die Progression." };
+}
+function pickPush(shPain, light) {
+  if (shPain >= 6) return { pat: "push", e1rmKey: "cablepress", cls: "machine", nm: "Cable Press (neutral, tief)", type: "reps", sets: light ? 2 : 3, reps: 10, rpe: light ? 5 : 6, note: "Kabel/Maschine – separat getrackt. Ellbogen nah, minimale Schulterdach-Beteiligung." };
+  if (shPain >= 3) return { pat: "push", e1rmKey: "floorpress", cls: "barbell", nm: "Floor Press (neutral)", type: "reps", sets: light ? 2 : 3, reps: 8, rpe: light ? 5 : 7 };
+  return { pat: "push", e1rmKey: "push", cls: "barbell", nm: light ? "Bankdrücken – leicht" : "Bankdrücken", type: "reps", sets: light ? 2 : 4, reps: light ? 6 : 5, rpe: light ? 5 : 8 };
+}
+var FIXED = {
+  row: { pat: "row", e1rmKey: null, cls: "machine", nm: "Rudern / Kabelzug eng", type: "reps", sets: 3, reps: 10, rpe: 7 },
+  pull: { pat: "pull", e1rmKey: null, cls: "machine", nm: "Latzug (neutral)", type: "reps", sets: 3, reps: 10, rpe: 7 },
+  neck: { pat: "neck", e1rmKey: null, cls: "isom", nm: "Nacken-Isometrie (4-Wege)", type: "iso", sets: 3, sec: 25, note: "Isometrie hilft gegen Steifheit." },
+  core: { pat: "core", e1rmKey: null, cls: "iso", nm: "Pallof Press", type: "reps", sets: 3, reps: 12, rpe: 6 }
+};
+
+/* ---------- periodization (mesocycle, autoregulated) ---------- */
+var MESO_WEEKS = [
+  { phase: "Akkumulation 1", rpeCap: 7, volMult: 1.0 },
+  { phase: "Akkumulation 2", rpeCap: 8, volMult: 1.1 },
+  { phase: "Intensivierung 1", rpeCap: 8.5, volMult: 1.0 },
+  { phase: "Intensivierung 2", rpeCap: 9, volMult: 0.9 },
+  { phase: "Deload", rpeCap: 6, volMult: 0.55 }
+];
+function meso() {
+  var done = (trend && trend.sessions ? trend.sessions.length : 0);
+  var weekAbs = Math.floor(done / 4);
+  var wk = ((weekAbs % MESO_WEEKS.length) + MESO_WEEKS.length) % MESO_WEEKS.length;
+  var block = Math.floor(weekAbs / MESO_WEEKS.length) + 1;
+  var m = MESO_WEEKS[wk] || MESO_WEEKS[0];
+  return { phase: m.phase, rpeCap: m.rpeCap, volMult: m.volMult, week: wk + 1, block: block };
+}
+
+/* ---------- strength standards (kg) for percentile bands, ~82kg male bodyweight ---------- */
+/* Rough population 1RM standards; used only for a self-orientation percentile. */
+var STANDARDS = {
+  squat:  { beginner: 60, novice: 90, intermediate: 125, advanced: 165, elite: 205 },
+  hinge:  { beginner: 80, novice: 115, intermediate: 155, advanced: 200, elite: 245 },
+  push:   { beginner: 45, novice: 65, intermediate: 90, advanced: 120, elite: 150 }
+};
+var LEVEL_NAMES = ["Anfänger", "Fortgeschritten", "Mittel", "Gut", "Elite"];
+function percentileFor(pat, e1rm) {
+  if (e1rm == null) return null;
+  var s = STANDARDS[pat];
+  // map the 5 standards to approx population percentiles
+  var pts = [[s.beginner, 5], [s.novice, 20], [s.intermediate, 50], [s.advanced, 80], [s.elite, 95]];
+  if (e1rm <= pts[0][0]) return Math.max(1, Math.round(e1rm / pts[0][0] * 5));
+  if (e1rm >= pts[4][0]) return 99;
+  for (var i = 0; i < pts.length - 1; i++) {
+    if (e1rm >= pts[i][0] && e1rm <= pts[i + 1][0]) {
+      var t = (e1rm - pts[i][0]) / (pts[i + 1][0] - pts[i][0]);
+      return Math.round(pts[i][1] + t * (pts[i + 1][1] - pts[i][1]));
+    }
+  }
+  return 50;
+}
+function levelFor(pat, e1rm) {
+  if (e1rm == null) return "–";
+  var s = STANDARDS[pat];
+  if (e1rm < s.novice) return "Anfänger";
+  if (e1rm < s.intermediate) return "Fortgeschritten";
+  if (e1rm < s.advanced) return "Mittel";
+  if (e1rm < s.elite) return "Gut";
+  return "Elite";
+}
+
+/* ---------- monthly gain rate per lift (kg/month) ---------- */
+function gainRate(pat) {
+  var arr = (trend.e1rm && trend.e1rm[pat]) || [];
+  if (arr.length < 2) return null;
+  var first = arr[0], last = arr[arr.length - 1];
+  var days = (new Date(last.date) - new Date(first.date)) / 86400000;
+  if (days < 1) return null;
+  return { week: (last.v - first.v) / days * 7, month: (last.v - first.v) / days * 30, total: last.v - first.v, days: Math.round(days) };
+}
+
+/* ---------- estimated lean mass gain ---------- */
+function leanGain() {
+  var sessions = (trend.sessions || []).length;
+  var consistency = Math.min(1, sessions / 12);
+  var monthly = 0.7 * consistency;
+  var bwTrend = null;
+  if (trend.bw && trend.bw.length >= 4) {
+    var s = trend.bw.slice(), n = s.length;
+    var half = Math.floor(n / 2);
+    var avgOld = s.slice(0, half).reduce(function (a, b) { return a + b.v; }, 0) / half;
+    var avgNew = s.slice(half).reduce(function (a, b) { return a + b.v; }, 0) / (n - half);
+    var spanDays = (new Date(s[n - 1].date) - new Date(s[0].date)) / 86400000;
+    if (spanDays >= 6) bwTrend = (avgNew - avgOld) / (spanDays / 2) * 7;
+  }
+  if (bwTrend != null) {
+    if (bwTrend <= 0) monthly *= 0.35;
+    else if (bwTrend < 0.1) monthly *= 0.7;
+    else if (bwTrend > 0.5) monthly *= 0.85;
+  }
+  var days = sessions * 7 / 4;
+  return { monthly: monthly, cumulative: monthly / 30 * days };
+}
+
+/* ---------- RTS-style autoregulation: learn individual fatigue response ---------- */
+function fatigueSignal() {
+  // Look at recent session RPEs and e1RM direction to gauge accumulated fatigue.
+  var sess = (trend.sessions || []).slice(-3);
+  var reasons = [];
+  var score = 0; // higher = more fatigued
+  if (sess.length === 3) {
+    var avgRpe = sess.reduce(function (a, s) { return a + (s.rpe || 7); }, 0) / 3;
+    if (avgRpe >= 8.5) { score += 2; reasons.push("Ø Session-RPE " + avgRpe.toFixed(1) + " (hoch)"); }
+    else if (avgRpe >= 7.5) { score += 1; }
+  }
+  // e1rm falling across last 3 in any big lift?
+  ["squat", "hinge", "push"].forEach(function (p) {
+    var a = (trend.e1rm && trend.e1rm[p]) || [];
+    if (a.length >= 3) {
+      var l3 = a.slice(-3).map(function (x) { return x.v; });
+      if (l3[2] < l3[1] && l3[1] < l3[0]) { score += 2; reasons.push(p + " e1RM fällt 3× in Folge"); }
+    }
+  });
+  return { score: score, reasons: reasons, deloadSuggested: score >= 4 };
+}
+
+/* ---------- honest gain-rate reference (clearly marked as orientation, not exact science) ---------- */
+/* These are rough experience-based orientation ranges for MONTHLY e1RM gain (kg),
+   NOT precise scientific genetic categories. They also assume you're not yet at a plateau. */
+function gainReferenceBands(pat) {
+  // scale roughly by lift size (deadlift gains bigger absolute numbers than bench)
+  var scale = { squat: 1.0, hinge: 1.2, push: 0.6 }[pat] || 1.0;
+  return [
+    { label: "Langsame Reaktion", perMonth: 1.5 * scale, color: "#C0392B" },
+    { label: "Durchschnitt", perMonth: 3.0 * scale, color: "#67757B" },
+    { label: "Gute Reaktion", perMonth: 5.0 * scale, color: "#30D158" },
+    { label: "Sehr schnell (früh/Wiedereinstieg)", perMonth: 8.0 * scale, color: "#0A8F3C" }
+  ];
+}
+
+/* ---------- cumulative progression archetype curves (model, clearly labelled) ---------- */
+/* Models CUMULATIVE e1RM gain over weeks for 4 lifter types. The SHAPE is realistic
+   (beginners spike early then plateau; elite keeps climbing) — the exact kg are a model,
+   not measured data. Your own real curve is overlaid for comparison. */
+function archetypeCurve(type, weeks, scale) {
+  // Each type: total plateau ceiling (kg over ~52 weeks) and how fast it saturates.
+  var params = {
+    slow:    { ceiling: 18, k: 0.16 },   // plateaus early & low
+    average: { ceiling: 32, k: 0.10 },
+    good:    { ceiling: 48, k: 0.065 },
+    elite:   { ceiling: 70, k: 0.04 }     // keeps climbing, saturates very late
+  }[type];
+  var out = [];
+  for (var w = 0; w <= weeks; w++) {
+    // saturating exponential: cumulative = ceiling * (1 - e^(-k*w))
+    out.push(params.ceiling * (1 - Math.exp(-params.k * w)) * scale);
+  }
+  return out;
+}
+var ARCHETYPES = [
+  { type: "slow", label: "Schwach", color: "#C0392B" },
+  { type: "average", label: "Mittel", color: "#B27A00" },
+  { type: "good", label: "Gut", color: "#30D158" },
+  { type: "elite", label: "Elite", color: "#0A8F3C" }
+];
+// Build your real cumulative curve per week from e1rm history (relative to first entry)
+function yourCumulative(pat, weeks) {
+  var arr = (trend.e1rm && trend.e1rm[pat]) || [];
+  if (arr.length < 1) return [];
+  var start = new Date(arr[0].date), base = arr[0].v;
+  var out = [];
+  for (var w = 0; w <= weeks; w++) {
+    var target = new Date(start.getTime() + w * 7 * 86400000);
+    // latest entry at or before this week
+    var val = null;
+    for (var i = 0; i < arr.length; i++) { if (new Date(arr[i].date) <= target) val = arr[i].v; }
+    out.push(val != null ? (val - base) : null);
+  }
+  return out;
+}
+
+/* ---------- volume tracking (RP / Israetel style) ---------- */
+/* Direct muscle worked by each movement pattern (1 set = 1 direct set). */
+var DIRECT_MUSCLE = {
+  squat: "quads", hinge: "hamstrings", push: "chest",
+  row: "back", pull: "back", core: "abs",
+  reh_sh: "shoulders", reh_kn: "quads", reh_nk: "neck"
+};
+/* Fractional contribution: e.g. bench press also hits triceps/front delts as ~0.5/0.33 sets. */
+var FRACTIONAL = {
+  squat: { quads: 1, glutes: 0.5, hamstrings: 0.33 },
+  hinge: { hamstrings: 1, back: 0.5, glutes: 0.66 },
+  push: { chest: 1, triceps: 0.5, shoulders: 0.33 },
+  row: { back: 1, biceps: 0.5, rearDelts: 0.33 },
+  pull: { back: 1, biceps: 0.5 },
+  core: { abs: 1 },
+  reh_sh: { shoulders: 1 }, reh_kn: { quads: 0.5 }, reh_nk: { neck: 1 }
+};
+var MUSCLE_DE = { quads: "Quadrizeps", hamstrings: "Beinbeuger", glutes: "Gesäß", chest: "Brust", back: "Rücken", triceps: "Trizeps", biceps: "Bizeps", shoulders: "Schultern", rearDelts: "hint. Schulter", abs: "Rumpf", neck: "Nacken" };
+var LANDMARKS = {
+  quads: { mev: 6, mav: 12, mrv: 18 }, hamstrings: { mev: 4, mav: 10, mrv: 16 },
+  glutes: { mev: 4, mav: 9, mrv: 16 }, chest: { mev: 6, mav: 12, mrv: 20 },
+  back: { mev: 8, mav: 14, mrv: 22 }, triceps: { mev: 4, mav: 10, mrv: 16 },
+  biceps: { mev: 4, mav: 10, mrv: 16 }, shoulders: { mev: 6, mav: 12, mrv: 20 },
+  rearDelts: { mev: 4, mav: 10, mrv: 16 }, abs: { mev: 6, mav: 12, mrv: 20 }, neck: { mev: 2, mav: 6, mrv: 12 }
+};
+/* Weekly volume from logged sessions in the last 7 days. mode: 'direct' or 'fractional'. */
+function weeklyVolume(mode) {
+  var cutoff = Date.now() - 7 * 86400000;
+  var totals = {};
+  var logs = trend.volumeLog || [];
+  logs.forEach(function (entry) {
+    if (new Date(entry.date).getTime() < cutoff) return;
+    var pat = entry.pat, sets = entry.sets;
+    if (mode === "fractional") {
+      var frac = FRACTIONAL[pat];
+      if (frac) Object.keys(frac).forEach(function (mus) { totals[mus] = (totals[mus] || 0) + sets * frac[mus]; });
+    } else {
+      var mus2 = DIRECT_MUSCLE[pat];
+      if (mus2) totals[mus2] = (totals[mus2] || 0) + sets;
+    }
+  });
+  return totals;
+}
+function volStatus(sets, lm) {
+  if (sets < lm.mev) return { label: "unter MEV", color: "#C0392B" };
+  if (sets <= lm.mav) return { label: "Aufbau", color: "#30D158" };
+  if (sets <= lm.mrv) return { label: "hoch", color: "#B27A00" };
+  return { label: "über MRV", color: "#C0392B" };
+}
+
+/* ---------- evidence-based evaluation engine (meso/macro) ---------- */
+/* Combines your logged quantitative data with a short qualitative survey and
+   produces concrete, individually justified adjustment SUGGESTIONS (not auto-applied).
+   Principles: RP volume landmarks, RPE/RIR autoregulation, per-lift frequency-recovery. */
+
+// Per-lift frequency recovery notes (evidence: larger/heavier lifts need more recovery).
+var LIFT_FREQ = {
+  hinge: { name: "Kreuzheben", maxFreq: 2, note: "Kreuzheben ist axial sehr ermüdend – selten mehr als 2×/Woche sinnvoll." },
+  squat: { name: "Kniebeuge", maxFreq: 3, note: "Kniebeuge verträgt 2–3×/Woche, wenn Volumen pro Einheit moderat bleibt." },
+  push:  { name: "Bankdrücken", maxFreq: 4, note: "Bankdrücken erlaubt oft höhere Frequenz (2–4×), da weniger systemisch ermüdend." }
+};
+
+function evaluateBlock(survey) {
+  // survey: { recovery:1-5, jointHealth:1-5, motivation:1-5, sleepAvg:1-5, timeBudget:1-5, sorenessLingers:bool }
+  var recs = [];
+  var s = survey || {};
+
+  // --- 1. VOLUME (intense sets/week vs MEV/MAV/MRV) ---
+  var vol = weeklyVolume("direct");
+  ["chest", "back", "quads", "hamstrings"].forEach(function (mus) {
+    var sets = vol[mus] || 0, lm = LANDMARKS[mus];
+    if (!lm) return;
+    var deName = MUSCLE_DE[mus] || mus;
+    if (sets < lm.mev) {
+      recs.push({ cat: "Volumen", dir: "erhöhen", detail: deName + ": " + Math.round(sets) + " Sätze/Wo liegt unter MEV (" + lm.mev + "). Vorschlag: +" + Math.max(2, lm.mev - Math.round(sets)) + " Sätze/Woche, um überhaupt Wachstumsreiz zu setzen.", why: "Unter dem minimalen effektiven Volumen findet kaum Adaptation statt (Israetel/RP-Modell)." });
+    } else if (sets > lm.mrv) {
+      recs.push({ cat: "Volumen", dir: "senken", detail: deName + ": " + Math.round(sets) + " Sätze/Wo über MRV (" + lm.mrv + "). Vorschlag: −" + Math.max(2, Math.round(sets) - lm.mav) + " Sätze/Woche.", why: "Über dem maximal erholbaren Volumen sammelt sich mehr Ermüdung als Reiz." });
+    } else if (sets >= lm.mav && (s.recovery == null || s.recovery >= 3)) {
+      recs.push({ cat: "Volumen", dir: "halten", detail: deName + ": " + Math.round(sets) + " Sätze/Wo im produktiven Bereich (MAV " + lm.mav + "). Halten oder max. +1–2 Sätze, wenn Erholung gut bleibt.", why: "Nahe MAV ist der Reiz-Ermüdungs-Kompromiss meist optimal." });
+    }
+  });
+
+  // --- 2. FREQUENCY (per lift, strength focus) ---
+  var recentSess = (trend.sessions || []).slice(-8);
+  var freqCount = {};
+  recentSess.forEach(function (ss) { freqCount[ss.dayId] = (freqCount[ss.dayId] || 0) + 1; });
+  Object.keys(LIFT_FREQ).forEach(function (pat) {
+    var g = gainRate(pat);
+    var lf = LIFT_FREQ[pat];
+    if (g && g.week <= 0.05 && (s.recovery == null || s.recovery >= 3)) {
+      recs.push({ cat: "Frequenz", dir: "erhöhen (prüfen)", detail: lf.name + " stagniert (≈ " + g.week.toFixed(1) + " kg/Wo). Wenn Erholung gut: 1× zusätzliche, leichtere Frequenz erwägen (bis " + lf.maxFreq + "×/Wo).", why: lf.note + " Mehr Frequenz kann bei guter Erholung Kraft steigern (verteiltes Volumen)." });
+    }
+  });
+
+  // --- 3. INTENSITY / PROGRESSION MODEL (RIR/RPE/%1RM) ---
+  var m = meso();
+  var sessRpe = recentSess.length ? recentSess.reduce(function (a, x) { return a + (x.rpe || 7); }, 0) / recentSess.length : null;
+  if (sessRpe != null) {
+    if (sessRpe >= 8.5 && (s.recovery != null && s.recovery <= 2)) {
+      recs.push({ cat: "Intensität", dir: "senken", detail: "Ø Session-RPE " + sessRpe.toFixed(1) + " bei schlechter Erholung. Vorschlag: nächsten Block RPE-Cap −0,5 bis −1 (mehr RIR), z.B. Arbeitssätze bei RIR 2–3 statt 0–1.", why: "Chronisch hohe Intensität ohne Erholung erhöht Verletzungs-/Übertrainingsrisiko, gerade bei gereizten Sehnen." });
+    } else if (sessRpe < 7 && (s.recovery == null || s.recovery >= 4)) {
+      recs.push({ cat: "Intensität", dir: "erhöhen", detail: "Ø Session-RPE " + sessRpe.toFixed(1) + " ist niedrig bei guter Erholung. Vorschlag: RPE-Cap +0,5 (näher an RIR 1–2), um mehr Kraftreiz zu setzen.", why: "Zu niedrige Intensität lässt Kraftpotenzial liegen, wenn Erholung es zulässt." });
+    }
+  }
+  recs.push({ cat: "Progressionsmodell", dir: "phasenabhängig", detail: "Aktuell " + m.phase + ": " + (m.phase.indexOf("Akkumulation") >= 0 ? "RIR 2–3 / RPE ≤ " + m.rpeCap + ", Fokus Volumen." : m.phase.indexOf("Intensivierung") >= 0 ? "RIR 1–2 / RPE bis " + m.rpeCap + ", Fokus Last." : "Deload: RPE ≤ 6, Volumen −40–50%."), why: "Wellenförmige Periodisierung (Volumen → Intensität → Deload) ist gut belegt für Kraft/Hypertrophie." });
+
+  // --- 4. EXERCISE SELECTION (pain-driven for you) ---
+  var lastPain = (trend.pain || []).slice(-3);
+  if (lastPain.length) {
+    var avgSh = lastPain.reduce(function (a, p) { return a + p.sh; }, 0) / lastPain.length;
+    var avgKn = lastPain.reduce(function (a, p) { return a + p.kn; }, 0) / lastPain.length;
+    if (avgSh >= 4) recs.push({ cat: "Übungsauswahl", dir: "anpassen", detail: "Schulter-Belastungsschmerz Ø " + avgSh.toFixed(1) + "/10. Vorschlag: Druckübungen weiter in schmerzfreiem ROM/neutralem Griff halten, erst bei <3/10 über 2 Wochen Richtung Wettkampf-Bankdrücken progressieren.", why: "Schmerzgesteuerte Progression schützt die Supraspinatus-Sehne vor Reizung." });
+    if (avgKn >= 4) recs.push({ cat: "Übungsauswahl", dir: "anpassen", detail: "Knie-Belastungsschmerz Ø " + avgKn.toFixed(1) + "/10. Vorschlag: isometrische/HSR-Varianten priorisieren, Beugung schmerzarm dosieren.", why: "Heavy-Slow-Resistance & Isometrie sind bei Patellatendinopathie evidenzbasiert wirksam." });
+  }
+  if (s.sorenessLingers) recs.push({ cat: "Erholung", dir: "beachten", detail: "Muskelkater hält >2 Tage an → aktuelles Volumen/Intensität ist nah an der Erholungsgrenze. Eher halten als steigern.", why: "Anhaltender DOMS deutet auf unvollständige Erholung zwischen Einheiten hin." });
+
+  if (s.jointHealth != null && s.jointHealth <= 2) recs.push({ cat: "Priorität", dir: "wichtig", detail: "Du bewertest deine Gelenkgesundheit als schlecht. Reha/Schmerzfreiheit vor Progression – im Zweifel Last raus und physiotherapeutisch abklären.", why: "Dein primäres Ziel ist Schmerzfreiheit; strukturelle Reizung geht Kraftaufbau vor." });
+
+  return recs;
+}
+
+function e1rmFor(pat) {
+  var arr = (trend.e1rm && trend.e1rm[pat]) || [];
+  return arr.length ? arr[arr.length - 1].v : null;
+}
+function recWeight(ex) {
+  if (ex.type !== "reps") return null;
+  var e = e1rmFor(ex.pat);
+  if (!e) return null;
+  var rir = 10 - ex.rpe;
+  return round25(e / (1 + (ex.reps + rir) * 0.0333));
+}
+
+function buildWorkout(c, forceDayIndex) {
+  var di = (forceDayIndex != null) ? forceDayIndex : settings.dayIndex;
+  var tmpl = SESSIONS[di % SESSIONS.length];
+  var kp = c ? c.kneeLoad : 0, sp = c ? c.shLoad : 0;
+  var m = meso();
+  var r = readiness(c);
+  var fatigue = fatigueSignal();
+  // RTS autoregulation: if your own performance/RPE data shows accumulated fatigue,
+  // trigger an unplanned deload regardless of the calendar week.
+  var autoDeload = fatigue.deloadSuggested;
+  var exs = tmpl.slots.map(function (slot) {
+    var ex;
+    if (slot === "squat") ex = pickSquat(kp);
+    else if (slot === "hinge") ex = pickHinge(kp);
+    else if (slot === "push") ex = pickPush(sp, false);
+    else if (slot === "pushlight") ex = pickPush(sp, true);
+    else ex = Object.assign({}, FIXED[slot]);
+    // periodization: volume + rpe cap
+    if (ex.type === "reps") {
+      ex.sets = Math.max(1, Math.round(ex.sets * m.volMult));
+      if (ex.rpe > m.rpeCap) ex.rpe = m.rpeCap;
+      // RTS auto-deload takes priority
+      if (autoDeload) { ex.sets = Math.max(2, Math.round(ex.sets * 0.6)); ex.rpe = Math.min(ex.rpe, 6); ex.autoDeload = true; }
+      // readiness damping
+      else if (r != null && r < 45) { ex.sets = Math.max(2, ex.sets - 1); ex.rpe = Math.max(5, ex.rpe - 2); ex.damped = true; }
+      else if (r != null && r < 60) { ex.rpe = Math.max(5, ex.rpe - 1); ex.damped = true; }
+    }
+    ex.rec = recWeight(ex);
+    return ex;
+  });
+  // rehab additions
+  var rehab = [];
+  if (c) {
+    var shMax = Math.max(c.shRest, c.shLoad), knMax = Math.max(c.knRest, c.kneeLoad), nkMax = Math.max(c.nkRest, c.nkLoad);
+    if (shMax >= 3) rehab.push({ pat: "reh_sh", nm: "Reha: Außenrotation Band", type: "reps", sets: 3, reps: 15, rpe: 5, rehab: true });
+    if (knMax >= 3) rehab.push({ pat: "reh_kn", nm: "Reha: Slant-Board Wall Sit", type: "iso", sets: 3, sec: 30, rehab: true });
+    if (nkMax >= 3) rehab.push({ pat: "reh_nk", nm: "Reha: Chin Tucks", type: "iso", sets: 3, sec: 15, rehab: true });
+  }
+  return { date: today(), dayIndex: di, dayId: tmpl.id, label: tmpl.label, meso: meso(), readiness: readiness(c), fatigue: fatigueSignal(), exercises: exs.concat(rehab) };
+}
+
+/* ---------- nutrition ---------- */
+/* ---------- adaptive calorie correction (autoregulated nutrition) ---------- */
+/* Compares your REAL weekly weight change to your TARGET and nudges calories so
+   your planned rate of gain actually happens. Uses a smoothed, damped adjustment. */
+function weightRatePerWeek() {
+  var bw = (trend.bw || []).filter(function (e) { return e.v > 0; });
+  if (bw.length < 4) return null;
+  var recent = bw.slice(-14);
+  if (recent.length < 4) return null;
+  var half = Math.floor(recent.length / 2);
+  var avg = function (a) { return a.reduce(function (s, e) { return s + e.v; }, 0) / a.length; };
+  var older = recent.slice(0, half), newer = recent.slice(half);
+  var spanDays = (new Date(recent[recent.length - 1].date) - new Date(recent[0].date)) / 86400000;
+  if (spanDays < 6) return null;
+  return (avg(newer) - avg(older)) / (spanDays / 2) * 7; // kg/week
+}
+function adaptiveCorrection() {
+  var prev = (trend.calCorrection != null) ? trend.calCorrection : 0;
+  var actual = weightRatePerWeek();
+  if (actual == null) return { correction: prev, actual: null, target: null, applied: false };
+  var rate = { conservative: 0.12, moderate: 0.22, aggressive: 0.4 }[profile.rate || "moderate"];
+  var target = rate / 100 * profile.weightKg; // target kg/week
+  var diff = target - actual; // positive => gaining too slow => need more kcal
+  // 1 kg ≈ 7700 kcal; weekly deficit/surplus needed = diff*7700, per day /7
+  var needed = diff * 7700 / 7;
+  // damp: move 50% toward the needed correction, clamp to ±400 kcal
+  var corr = Math.max(-400, Math.min(400, Math.round((prev + needed) * 0.5)));
+  return { correction: corr, actual: actual, target: target, applied: true };
+}
+
+/* ---------- manual nutrition logging + analysis ---------- */
+function saveNutritionEntry(kcal, carbs, protein, fat) {
+  var log = load("nutritionLog", []);
+  var idx = -1;
+  for (var i = 0; i < log.length; i++) { if (log[i].date === today()) { idx = i; break; } }
+  var entry = { date: today(), kcal: kcal, carbs: carbs, protein: protein, fat: fat };
+  if (idx >= 0) log[idx] = entry; else log.push(entry);
+  save("nutritionLog", log);
+}
+function nutritionToday() {
+  var log = load("nutritionLog", []);
+  for (var i = 0; i < log.length; i++) { if (log[i].date === today()) return log[i]; }
+  return null;
+}
+// color feedback vs plan: green in range, yellow slightly off, red big deviation
+function calorieFeedback(actual, planned) {
+  if (actual == null || !planned) return { cls: "muted", label: "—", pill: "" };
+  var diff = actual - planned;
+  var pct = diff / planned;
+  if (Math.abs(pct) <= 0.05) return { cls: "ok", label: "im Ziel", pill: "ok", diff: diff };
+  if (Math.abs(pct) <= 0.12) return { cls: "warnc", label: diff > 0 ? "leicht über Ziel" : "leicht unter Ziel", pill: "warnc", diff: diff };
+  return { cls: "bad", label: diff > 0 ? "deutlich über Ziel – erhöhtes Fettaufbau-Risiko" : "deutlich unter Ziel", pill: "bad", diff: diff };
+}
+// estimated fat gain/loss from energy balance over the logged period
+function bodyCompProjection() {
+  var log = load("nutritionLog", []);
+  var n = nutrition();
+  if (!n || log.length < 3) return null;
+  var totalSurplus = 0, days = 0;
+  log.forEach(function (e) {
+    if (e.kcal > 0) { totalSurplus += (e.kcal - n.tdee); days++; }
+  });
+  if (days < 3) return null;
+  var avgSurplus = totalSurplus / days;
+  // ~7700 kcal per kg. In a surplus, roughly a share goes to fat depending on how big it is & training status.
+  // Honest heuristic: at a lean-bulk surplus (~200-300) ~40-50% fat; bigger surplus => higher fat share.
+  var totalKgFromEnergy = totalSurplus / 7700;
+  var fatShare = avgSurplus <= 0 ? 0.8 : (avgSurplus < 300 ? 0.45 : avgSurplus < 500 ? 0.6 : 0.75);
+  var estFatKg = totalKgFromEnergy * (totalSurplus > 0 ? fatShare : 0.8);
+  var estLeanKg = totalKgFromEnergy - estFatKg;
+  return { days: days, avgSurplus: Math.round(avgSurplus), totalKg: totalKgFromEnergy, fatKg: estFatKg, leanKg: estLeanKg };
+}
+// adherence: how consistently you logged & hit your plan
+function adherence() {
+  var log = load("nutritionLog", []);
+  var n = nutrition();
+  if (!n || !log.length) return null;
+  var last14 = log.filter(function (e) { return (Date.now() - new Date(e.date).getTime()) < 14 * 86400000; });
+  if (!last14.length) return null;
+  var inRange = last14.filter(function (e) { return Math.abs(e.kcal - n.cal) / n.cal <= 0.08; }).length;
+  return { logged: last14.length, inRange: inRange, pct: Math.round(inRange / last14.length * 100) };
+}
+
+function nutrition() {
+  if (!profile) return null;
+  var lean = profile.weightKg * (1 - profile.bf / 100);
+  var bmr = 370 + 21.6 * lean;
+  var tdee = bmr * profile.act;
+  var rate = { conservative: 0.12, moderate: 0.22, aggressive: 0.4 }[profile.rate || "moderate"];
+  var surplus = Math.round((rate / 100 * profile.weightKg * 7700) / 7);
+  var corr = (trend.calCorrection != null) ? trend.calCorrection : 0;
+  var cal = profile.manualCal || Math.round(tdee + surplus + corr);
+  var p = Math.round(profile.weightKg * 2.2), f = Math.round(profile.weightKg * 0.9);
+  var c = Math.max(0, Math.round((cal - p * 4 - f * 9) / 4));
+  return { tdee: Math.round(tdee), cal: cal, p: p, f: f, c: c, corr: corr };
+}
+
+/* ---------- readiness ---------- */
+function readiness(c) {
+  if (!c) return null;
+  var s = Math.min(1, c.sleep / 8) * 100 * 0.3;
+  s += ((5 - c.stress) / 4) * 100 * 0.2;
+  var pain = (c.shLoad + c.kneeLoad + c.nkLoad) / 3;
+  s += ((10 - pain) / 10) * 100 * 0.5;
+  return Math.round(Math.max(0, Math.min(100, s)));
+}
+
+/* ---------- streak ---------- */
+function streak() {
+  var set = {}; (trend.logins || []).forEach(function (d) { set[d] = 1; });
+  var cur = 0, d = new Date(today());
+  while (set[new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)]) {
+    cur++; d.setDate(d.getDate() - 1);
+  }
+  return cur;
+}
+
+/* ---------- render helpers ---------- */
+function el(html) { var d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; }
+function flash(msg) {
+  var f = document.getElementById("flash");
+  f.innerHTML = '<div class="flash">' + msg + '</div>';
+  setTimeout(function () { f.innerHTML = ""; }, 2000);
+}
+
+/* ---------- simple SVG line chart ---------- */
+function lineChart(values, labels, color) {
+  color = color || "#30D158";
+  var W = 320, H = 150, pad = 30;
+  if (!values.length) return '<div class="muted">Noch keine Daten.</div>';
+  var mn = Math.min.apply(null, values), mx = Math.max.apply(null, values);
+  if (mn === mx) { mn -= 1; mx += 1; }
+  var n = values.length;
+  var px = function (i) { return pad + (n <= 1 ? 0 : i * (W - pad - 10) / (n - 1)); };
+  var py = function (v) { return 10 + (H - 30 - 10) - ((v - mn) / (mx - mn)) * (H - 30 - 10); };
+  var pts = values.map(function (v, i) { return px(i) + "," + py(v); }).join(" ");
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+  for (var g = 0; g <= 3; g++) {
+    var yy = 10 + g * (H - 30 - 10) / 3;
+    var val = mx - g * (mx - mn) / 3;
+    svg += '<line x1="' + pad + '" y1="' + yy + '" x2="' + (W - 10) + '" y2="' + yy + '" stroke="#E2E8E9"/>';
+    svg += '<text x="' + (pad - 4) + '" y="' + (yy + 3) + '" font-size="9" fill="#67757B" text-anchor="end">' + (Math.round(val * 10) / 10) + '</text>';
+  }
+  svg += '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="2"/>';
+  values.forEach(function (v, i) { svg += '<circle cx="' + px(i) + '" cy="' + py(v) + '" r="2.5" fill="' + color + '"/>'; });
+  svg += '</svg>';
+  return svg;
+}
+
+/* ---------- SETUP ---------- */
+function renderSetup() {
+  var app = document.getElementById("app");
+  app.innerHTML =
+    '<header><div class="icon">IL</div><div><h1>Iron Ledger</h1><div class="sub">Einmalige Einrichtung</div></div></header>' +
+    '<div class="card">' +
+    '<label>Körpergewicht (kg)</label><input id="s_w" type="number" value="81.5" />' +
+    '<label>Körperfett (%)</label><input id="s_bf" type="number" value="11.3" />' +
+    '<label>Aktivität außerhalb Training</label><select id="s_act"><option value="1.4">Sitzend</option><option value="1.55" selected>Moderat</option><option value="1.7">Sehr aktiv</option></select>' +
+    '<label>Ziel-Zunahmerate</label><select id="s_rate"><option value="conservative">Konservativ (min. Fett)</option><option value="moderate" selected>Moderat</option><option value="aggressive">Ambitioniert</option></select>' +
+    '<div style="height:12px"></div><button onclick="saveSetup()">Profil speichern</button>' +
+    '</div>';
+  document.getElementById("nav").innerHTML = "";
+}
+window.saveSetup = function () {
+  profile = {
+    weightKg: parseFloat(document.getElementById("s_w").value) || 81.5,
+    bf: parseFloat(document.getElementById("s_bf").value) || 11.3,
+    act: parseFloat(document.getElementById("s_act").value),
+    rate: document.getElementById("s_rate").value,
+    manualCal: null
+  };
+  save("profile", profile);
+  flash("Profil gespeichert");
+  render();
+};
+
+/* ---------- CHECK-IN ---------- */
+function slider(id, label, min, max, val, accent) {
+  return '<label>' + label + '<span class="slider-val" id="v_' + id + '" style="color:' + (accent || '#30D158') + '">' + val + '</span></label>' +
+    '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" value="' + val + '" step="1" ' +
+    'oninput="document.getElementById(\'v_' + id + '\').textContent=this.value" />';
+}
+function renderCheckinForm() {
+  var app = document.getElementById("app");
+  app.innerHTML =
+    headerHtml() +
+    '<h2>Morgen-Check-in</h2><div class="card">' +
+    slider("c_sleep", "Schlaf (Std)", 3, 10, 7) +
+    slider("c_stress", "Stress", 1, 5, 3) +
+    '<label>Körpergewicht heute (kg)</label><input id="c_bw" type="number" placeholder="optional" />' +
+    '</div>' +
+    '<h2>Schmerz – Ruhe & Belastung (0–10)</h2>' +
+    painBlock("Schulter", "sh") + painBlock("Knie", "kn") + painBlock("Nacken", "nk") +
+    '<div style="height:8px"></div><button onclick="submitCheckin()">Check-in abschließen</button>';
+  navHtml();
+}
+function painBlock(name, key) {
+  return '<div class="painblock"><div class="t">' + name + '</div>' +
+    slider(key + "_rest", "in Ruhe", 0, 10, 0, "#67757B") +
+    slider(key + "_load", "unter Belastung", 0, 10, 0, "#C0392B") + '</div>';
+}
+window.submitCheckin = function () {
+  var g = function (id) { return parseInt(document.getElementById(id).value, 10); };
+  checkinToday = {
+    date: today(), sleep: g("c_sleep"), stress: g("c_stress"),
+    shRest: g("sh_rest"), shLoad: g("sh_load"),
+    knRest: g("kn_rest"), kneeLoad: g("kn_load"),
+    nkRest: g("nk_rest"), nkLoad: g("nk_load")
+  };
+  var bw = parseFloat(document.getElementById("c_bw").value);
+  save("checkin_" + today(), checkinToday);
+  if (bw > 0) { trend.bw.push({ date: today(), v: bw }); }
+  trend.pain.push({ date: today(), sh: checkinToday.shLoad, kn: checkinToday.kneeLoad, nk: checkinToday.nkLoad });
+  if ((trend.logins || []).indexOf(today()) < 0) { trend.logins = trend.logins || []; trend.logins.push(today()); }
+  // autoregulate calories from real weight trend
+  var adapt = adaptiveCorrection();
+  if (adapt.applied) trend.calCorrection = adapt.correction;
+  save("trend", trend);
+  workoutToday = buildWorkout(checkinToday);
+  save("workout_" + today(), workoutToday);
+  flash("Check-in gespeichert");
+  render();
+};
+
+/* ---------- TODAY ---------- */
+function headerHtml() {
+  return '<header><div class="icon">IL</div><div><h1>Iron Ledger</h1><div class="sub">' +
+    new Date().toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" }) +
+    '</div></div></header>';
+}
+function renderToday() {
+  if (!checkinToday) { renderCheckinForm(); return; }
+  // upgrade old saved workout (from previous app version) so new fields exist
+  if (workoutToday && !workoutToday.meso) {
+    workoutToday = buildWorkout(checkinToday, workoutToday.dayIndex);
+    save("workout_" + today(), workoutToday);
+  }
+  if (!workoutToday) {
+    workoutToday = buildWorkout(checkinToday);
+    save("workout_" + today(), workoutToday);
+  }
+  var app = document.getElementById("app");
+  var n = nutrition();
+  var r = readiness(checkinToday);
+  var html = headerHtml();
+  html += '<div class="card" style="display:flex;justify-content:space-between;align-items:center">' +
+    '<div><div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:600;color:#30D158">' + streak() + ' Tage</div>' +
+    '<div class="muted">Login-Streak</div></div>' +
+    '<div style="text-align:right"><div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:600;color:' +
+    (r < 45 ? '#C0392B' : r < 65 ? '#B27A00' : '#30D158') + '">' + r + '</div><div class="muted">Readiness</div></div></div>';
+
+  html += '<h2>Ernährung heute</h2><div class="grid4">' +
+    '<div class="stat"><div class="n">' + n.cal + '</div><div class="l">kcal</div></div>' +
+    '<div class="stat"><div class="n">' + n.p + 'g</div><div class="l">Protein</div></div>' +
+    '<div class="stat"><div class="n">' + n.f + 'g</div><div class="l">Fett</div></div>' +
+    '<div class="stat"><div class="n">' + n.c + 'g</div><div class="l">Carbs</div></div></div>';
+  // manual nutrition entry + feedback
+  var nt = nutritionToday();
+  var fb = calorieFeedback(nt ? nt.kcal : null, n.cal);
+  html += '<h2>Ernährung eintragen</h2><div class="card">';
+  html += '<div class="row"><div><label>Kalorien</label><input id="n_kcal" type="number" placeholder="' + n.cal + '" value="' + (nt ? nt.kcal : "") + '"/></div>' +
+    '<div><label>Protein (g)</label><input id="n_p" type="number" placeholder="' + n.p + '" value="' + (nt ? nt.protein : "") + '"/></div></div>';
+  html += '<div class="row"><div><label>Carbs (g)</label><input id="n_c" type="number" placeholder="' + n.c + '" value="' + (nt ? nt.carbs : "") + '"/></div>' +
+    '<div><label>Fett (g)</label><input id="n_f" type="number" placeholder="' + n.f + '" value="' + (nt ? nt.fat : "") + '"/></div></div>';
+  html += '<div style="height:10px"></div><button onclick="logNutrition()">Speichern</button>';
+  if (nt) {
+    html += '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">' +
+      '<span class="muted">Ist ' + nt.kcal + ' / Plan ' + n.cal + ' kcal</span>' +
+      '<span class="pill ' + fb.pill + '">' + fb.label + '</span></div>';
+  }
+  html += '</div>';
+  var wr = weightRatePerWeek();
+  if (wr != null) {
+    var rateTarget = { conservative: 0.12, moderate: 0.22, aggressive: 0.4 }[profile.rate || "moderate"] / 100 * profile.weightKg;
+    var corrTxt = n.corr === 0 ? "keine Anpassung nötig" : (n.corr > 0 ? "+" + n.corr + " kcal (du legst zu langsam zu)" : n.corr + " kcal (du legst zu schnell zu)");
+    html += '<div class="card" style="padding:10px;margin-top:8px"><div class="muted">Kalorien-Autoregulation</div>' +
+      '<div style="font-size:13px;margin-top:2px">Ist: <b>' + (wr >= 0 ? "+" : "") + wr.toFixed(2) + ' kg/Wo</b> · Ziel: +' + rateTarget.toFixed(2) + ' kg/Wo</div>' +
+      '<div style="font-size:13px;color:#30D158;font-weight:600">Anpassung: ' + corrTxt + '</div></div>';
+  } else if (!profile.manualCal) {
+    html += '<div class="muted" style="margin-top:4px">Ab ~4 Gewichts-Einträgen justiert die App die Kalorien automatisch nach deinem echten Trend.</div>';
+  }
+
+  // muscle gain estimate
+  var lg = leanGain();
+  html += '<h2>Geschätzter Muskelmasse-Zuwachs</h2><div class="card">' +
+    '<div style="font-family:ui-monospace,monospace;font-size:22px;font-weight:600;color:#30D158">≈ ' + lg.cumulative.toFixed(2) + ' kg</div>' +
+    '<div class="muted">kumuliert · aktuell ≈ ' + lg.monthly.toFixed(2) + ' kg/Monat. Schätzung, keine Messung.</div></div>';
+
+  // periodization + manual day switch (bulletproof against old/missing data)
+  var m = (workoutToday && workoutToday.meso) ? workoutToday.meso : meso();
+  if (!m || m.block == null) m = { phase: "Akkumulation 1", rpeCap: 7, volMult: 1.0, week: 1, block: 1 };
+  html += '<h2>Training – ' + workoutToday.label + '</h2>';
+  html += '<div class="card" style="padding:10px"><div class="muted">Mesozyklus Block ' + m.block + ' · Woche ' + m.week + '/5 · <b style="color:#101619">' + m.phase + '</b> (RPE-Cap ' + m.rpeCap + ', Vol ×' + m.volMult + ')</div>';
+  var fat = workoutToday.fatigue || { deloadSuggested: false, reasons: [] };
+  if (workoutToday.exercises.some(function (e) { return e.autoDeload; })) {
+    html += '<div style="color:#C0392B;margin-top:6px;font-weight:600">⚡ Auto-Deload aktiv (Autoregulation)</div>' +
+      '<div class="muted">Deine Daten zeigen Ermüdung: ' + fat.reasons.join(" · ") + '. Belastung heute automatisch reduziert.</div>';
+  } else if (workoutToday.exercises.some(function (e) { return e.damped; })) {
+    html += '<div class="muted" style="color:#B27A00;margin-top:4px">Niedrige Readiness – Belastung heute automatisch reduziert.</div>';
+  }
+  html += '<div style="margin-top:8px"><span class="muted">Einheit manuell wählen: </span>';
+  SESSIONS.forEach(function (s, i) {
+    html += '<button class="small" style="width:auto;display:inline-block;margin:2px;' + (workoutToday.dayIndex === i ? '' : 'background:#fff;color:#30D158;border:1px solid #30D158') + '" onclick="switchDay(' + i + ')">' + s.id + '</button>';
+  });
+  html += '</div></div>';
+
+  workoutToday.exercises.forEach(function (ex) {
+    html += '<div class="ex"><div class="nm">' + (ex.rehab ? '🩹 ' : '') + ex.nm +
+      (ex.rec ? '<span style="float:right;font-family:ui-monospace,monospace;color:#30D158">' + ex.rec + ' kg</span>' : '') + '</div>' +
+      '<div class="meta">' + (ex.type === "reps" ? ex.sets + " × " + ex.reps + " @ RPE " + ex.rpe + (ex.damped ? " ↓" : "") : ex.sets + " × " + ex.sec + "s Halten") + '</div>' +
+      (ex.note ? '<div class="note">' + ex.note + '</div>' : '') + '</div>';
+  });
+
+  // daily checklist
+  var cl = load("checklist_" + today(), { cal: false, macro: false, trained: false, weighed: false });
+  var items = [["cal", "Kalorien getroffen"], ["macro", "Makros getroffen"], ["trained", "Einheit trainiert"], ["weighed", "Gewogen"]];
+  var doneN = items.filter(function (it) { return cl[it[0]]; }).length;
+  html += '<h2>Tages-Checkliste</h2><div class="card">';
+  items.forEach(function (it) {
+    html += '<div onclick="toggleCheck(\'' + it[0] + '\')" style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer">' +
+      '<span style="width:22px;height:22px;border-radius:5px;border:1.5px solid ' + (cl[it[0]] ? '#30D158' : '#C4CED1') + ';background:' + (cl[it[0]] ? '#30D158' : 'transparent') + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px">' + (cl[it[0]] ? '✓' : '') + '</span>' +
+      '<span style="' + (cl[it[0]] ? 'color:#67757B;text-decoration:line-through' : '') + '">' + it[1] + '</span></div>';
+  });
+  if (doneN === 4) html += '<div style="color:#30D158;font-weight:600;margin-top:6px">Alles erledigt – perfekter Tag!</div>';
+  else html += '<div class="muted" style="margin-top:6px">' + doneN + '/4 erledigt</div>';
+  html += '</div>';
+
+  if (checkinToday.shRest >= 5 || checkinToday.knRest >= 5 || checkinToday.nkRest >= 5) {
+    html += '<div class="warn">Schmerz ≥5/10 auch in Ruhe – bitte ärztlich/physiotherapeutisch abklären lassen. Die App steuert Belastung, ersetzt aber keine Diagnose.</div>';
+  }
+  app.innerHTML = html;
+  navHtml();
+}
+window.logNutrition = function () {
+  var kcal = parseFloat(v("n_kcal")), p = parseFloat(v("n_p")), c = parseFloat(v("n_c")), f = parseFloat(v("n_f"));
+  if (!(kcal > 0)) { flash("Bitte Kalorien eingeben"); return; }
+  saveNutritionEntry(kcal, c || 0, p || 0, f || 0);
+  // mark checklist items
+  var cl = load("checklist_" + today(), {});
+  cl.cal = true; if (p > 0 && c > 0 && f > 0) cl.macro = true;
+  save("checklist_" + today(), cl);
+  flash("Ernährung gespeichert");
+  render();
+};
+window.startReview = function (kind) { renderReviewSurvey(kind); };
+window.switchDay = function (i) {
+  workoutToday = buildWorkout(checkinToday, i);
+  workoutToday.done = false;
+  settings.dayIndex = i;
+  save("settings", settings);
+  save("workout_" + today(), workoutToday);
+  flash("Einheit " + SESSIONS[i].id + " gewählt");
+  render();
+};
+window.toggleCheck = function (key) {
+  var cl = load("checklist_" + today(), { cal: false, macro: false, trained: false, weighed: false });
+  cl[key] = !cl[key];
+  save("checklist_" + today(), cl);
+  render();
+};
+
+/* ---------- LOG ---------- */
+function renderLog() {
+  if (!workoutToday) { var a = document.getElementById("app"); a.innerHTML = headerHtml() + '<div class="card muted">Mach zuerst das Check-in im Tab „Heute".</div>'; navHtml(); return; }
+  var app = document.getElementById("app");
+  var html = headerHtml() + '<h2>Eintragen – ' + workoutToday.label + '</h2>';
+  workoutToday.exercises.forEach(function (ex, ei) {
+    html += '<div class="ex"><div class="nm">' + (ex.rehab ? '🩹 ' : '') + ex.nm + '</div>';
+    var saved = ex.logged || [];
+    for (var i = 0; i < ex.sets; i++) {
+      var s = saved[i] || {};
+      if (ex.type === "reps") {
+        html += '<div class="setrow"><span>S' + (i + 1) + '</span>' +
+          '<input type="number" placeholder="kg" value="' + (s.w != null ? s.w : (ex.rec || "")) + '" id="l_' + ei + '_' + i + '_w"/>' +
+          '<input type="number" placeholder="Wdh" value="' + (s.r != null ? s.r : ex.reps) + '" id="l_' + ei + '_' + i + '_r"/>' +
+          '<input type="number" placeholder="RPE" value="' + (s.rpe != null ? s.rpe : ex.rpe) + '" id="l_' + ei + '_' + i + '_rpe"/></div>';
+      } else {
+        html += '<div class="setrow"><span>S' + (i + 1) + '</span>' +
+          '<input type="number" placeholder="Sek" value="' + (s.sec != null ? s.sec : ex.sec) + '" id="l_' + ei + '_' + i + '_sec"/>' +
+          '<input type="number" placeholder="Schmerz" value="' + (s.pain != null ? s.pain : "") + '" id="l_' + ei + '_' + i + '_pain"/><span></span></div>';
+      }
+    }
+    html += '</div>';
+  });
+  html += '<label>Gesamt-RPE der Einheit</label>' + '<input type="number" id="l_sessionrpe" placeholder="1-10" value="' + (workoutToday.sessionRpe || 7) + '"/>' +
+    '<div style="height:10px"></div>' +
+    (workoutToday.done ? '<div class="muted">✓ Einheit gespeichert.</div>' : '<button onclick="finishWorkout()">Einheit abschließen & speichern</button>');
+  app.innerHTML = html;
+  navHtml();
+}
+window.finishWorkout = function () {
+  workoutToday.exercises.forEach(function (ex, ei) {
+    var sets = [];
+    for (var i = 0; i < ex.sets; i++) {
+      if (ex.type === "reps") {
+        var w = parseFloat(v("l_" + ei + "_" + i + "_w")), r = parseInt(v("l_" + ei + "_" + i + "_r"), 10), rp = parseFloat(v("l_" + ei + "_" + i + "_rpe"));
+        sets.push({ w: w, r: r, rpe: rp });
+      } else {
+        sets.push({ sec: parseInt(v("l_" + ei + "_" + i + "_sec"), 10), pain: parseFloat(v("l_" + ei + "_" + i + "_pain")) });
+      }
+    }
+    ex.logged = sets;
+    // record volume (number of sets done) for the RP-style table
+    if (sets.length && !ex.__volCounted) {
+      trend.volumeLog = trend.volumeLog || [];
+      trend.volumeLog.push({ date: today(), pat: ex.pat, sets: sets.length });
+    }
+    // update e1rm for reps
+    if (ex.type === "reps" && !ex.rehab) {
+      var best = null;
+      sets.forEach(function (s) {
+        if (s.w > 0 && s.r > 0) {
+          var e = s.w * (1 + (s.r + (10 - (s.rpe || 8))) * 0.0333);
+          if (!best || e > best) best = e;
+        }
+      });
+      // use the specific movement key; machines/isolation tracked separately, never merged into barbell lifts
+      var key = ex.e1rmKey || ex.pat;
+      if (best && key) {
+        trend.e1rm = trend.e1rm || {};
+        trend.e1rm[key] = trend.e1rm[key] || [];
+        trend.e1rm[key].push({ date: today(), v: round25(best) });
+      }
+    }
+  });
+  workoutToday.sessionRpe = parseFloat(v("l_sessionrpe")) || 7;
+  workoutToday.done = true;
+  save("workout_" + today(), workoutToday);
+  // record session for mesocycle + checklist
+  trend.sessions = trend.sessions || [];
+  trend.sessions.push({ date: today(), rpe: workoutToday.sessionRpe, dayId: workoutToday.dayId });
+  save("trend", trend);
+  // mark checklist trained
+  var cl = load("checklist_" + today(), {});
+  cl.trained = true; save("checklist_" + today(), cl);
+  // advance to next day AND immediately build the next session so it shows right away
+  settings.dayIndex = (settings.dayIndex + 1) % SESSIONS.length;
+  save("settings", settings);
+  workoutToday = buildWorkout(checkinToday);
+  workoutToday.done = false;
+  save("workout_" + today(), workoutToday);
+  flash("Einheit gespeichert – nächste Einheit ist bereit");
+  tab = "today";
+  render();
+};
+function v(id) { var e = document.getElementById(id); return e ? e.value : ""; }
+
+/* ---------- PROGRESS ---------- */
+function renderProgress() {
+  var app = document.getElementById("app");
+  var html = headerHtml();
+
+  var lifts = [["squat", "Kniebeuge"], ["hinge", "Kreuzheben"], ["push", "Bankdrücken"]];
+
+  // 1RM table
+  html += '<h2>1RM-Verlauf (Big Three)</h2><div class="card"><table><tr><th>Lift</th><th>Start</th><th>Aktuell</th><th>Δ</th></tr>';
+  lifts.forEach(function (p) {
+    var arr = (trend.e1rm && trend.e1rm[p[0]]) || [];
+    var first = arr.length ? arr[0].v : null, cur = arr.length ? arr[arr.length - 1].v : null;
+    var d = (first != null && cur != null) ? (cur - first) : null;
+    html += '<tr><td>' + p[1] + '</td><td class="n">' + (first != null ? first + " kg" : "–") + '</td>' +
+      '<td class="n">' + (cur != null ? cur + " kg" : "–") + '</td>' +
+      '<td class="n" style="color:' + (d == null ? '#67757B' : d >= 0 ? '#30D158' : '#C0392B') + '">' + (d != null ? (d >= 0 ? "+" : "") + d.toFixed(1) : "–") + '</td></tr>';
+  });
+  html += '</table></div>';
+
+  // e1rm charts
+  [["hinge", "Kreuzheben"], ["squat", "Kniebeuge"], ["push", "Bankdrücken"]].forEach(function (p) {
+    var arr = (trend.e1rm && trend.e1rm[p[0]]) || [];
+    html += '<h2>' + p[1] + ' – e1RM</h2><div class="card">' + lineChart(arr.map(function (x) { return x.v; }), arr.map(function (x) { return x.date.slice(5); }), "#30D158") + '</div>';
+  });
+
+  // weight trend
+  html += '<h2>Gewichtstrend</h2><div class="card">' + lineChart(trend.bw.map(function (x) { return x.v; }), trend.bw.map(function (x) { return x.date.slice(5); }), "#30D158") + '</div>';
+
+  // pain trend
+  html += '<h2>Schmerz unter Belastung</h2><div class="card">';
+  if (trend.pain.length >= 2) {
+    html += '<div class="muted" style="margin-bottom:4px">Schulter (rot), Knie (gelb), Nacken (grau)</div>';
+    html += '<svg viewBox="0 0 320 150">';
+    var series = [["sh", "#C0392B"], ["kn", "#B27A00"], ["nk", "#67757B"]];
+    for (var g = 0; g <= 2; g++) { var yy = 10 + g * 50; html += '<line x1="30" y1="' + yy + '" x2="310" y2="' + yy + '" stroke="#E2E8E9"/><text x="26" y="' + (yy + 3) + '" font-size="9" fill="#67757B" text-anchor="end">' + (10 - g * 5) + '</text>'; }
+    series.forEach(function (s) {
+      var n = trend.pain.length;
+      var pts = trend.pain.map(function (p, i) {
+        var x = 30 + (n <= 1 ? 0 : i * 280 / (n - 1));
+        var y = 10 + 100 - (p[s[0]] / 10) * 100;
+        return x + "," + y;
+      }).join(" ");
+      html += '<polyline points="' + pts + '" fill="none" stroke="' + s[1] + '" stroke-width="2"/>';
+    });
+    html += '</svg>';
+  } else { html += '<div class="muted">Ab 2 Check-ins erscheint hier der Verlauf.</div>'; }
+  html += '</div>';
+
+  app.innerHTML = html;
+  navHtml();
+}
+
+/* ---------- STATS (separate analysis tab) ---------- */
+function renderStats() {
+  var app = document.getElementById("app");
+  var html = headerHtml();
+  var lifts = [["squat", "Kniebeuge"], ["hinge", "Kreuzheben"], ["push", "Bankdrücken"]];
+
+  // review scheduling banners
+  var rs = reviewStatus();
+  if (rs.macroDue) {
+    html += '<div class="card" style="border-color:#30D158"><div style="font-weight:600;color:#30D158">Makro-Review fällig</div>' +
+      '<div class="muted" style="margin:4px 0 8px">Du hast ' + rs.sessions + ' Einheiten – Zeit für einen großen Block-Rückblick.</div>' +
+      '<button onclick="startReview(\'macro\')">Makro-Review starten</button></div>';
+  } else if (rs.mesoDue) {
+    html += '<div class="card" style="border-color:#30D158"><div style="font-weight:600;color:#30D158">Meso-Review fällig</div>' +
+      '<div class="muted" style="margin:4px 0 8px">' + rs.sinceMeso + ' Einheiten seit dem letzten Check – Zeit für die 4-Wochen-Auswertung.</div>' +
+      '<button onclick="startReview(\'meso\')">Meso-Review starten</button></div>';
+  } else {
+    html += '<div class="card"><div class="muted">Nächstes Meso-Review in ' + Math.max(0, 4 - rs.sinceMeso) + ' Einheiten. Du kannst es auch jederzeit manuell starten:</div>' +
+      '<div style="height:6px"></div><button class="ghost small" onclick="startReview(\'meso\')">Review jetzt starten</button></div>';
+  }
+
+  // last recommendations (if any)
+  html += recommendationsHtml();
+
+  // ---- Nutrition analysis ----
+  html += '<h2>Ernährungs-Analyse</h2>';
+  var n = nutrition();
+  var nlog = load("nutritionLog", []);
+  var adh = adherence();
+  var proj = bodyCompProjection();
+  if (!nlog.length) {
+    html += '<div class="card muted">Noch keine Ernährung eingetragen. Trag im „Heute"-Tab deine Kalorien & Makros ein, dann erscheint hier die Analyse.</div>';
+  } else {
+    // plan vs actual (last entry)
+    var lastN = nlog[nlog.length - 1];
+    var fb = calorieFeedback(lastN.kcal, n.cal);
+    html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<b>Plan vs. Ist (letzter Tag)</b><span class="pill ' + fb.pill + '">' + fb.label + '</span></div>' +
+      '<table style="margin-top:8px"><tr><th>Nährstoff</th><th>Plan</th><th>Ist</th><th>Δ</th></tr>' +
+      nutRow("Kalorien", n.cal, lastN.kcal) + nutRow("Protein", n.p, lastN.protein) +
+      nutRow("Carbs", n.c, lastN.carbs) + nutRow("Fett", n.f, lastN.fat) + '</table></div>';
+
+    // adherence
+    if (adh) {
+      var adhCls = adh.pct >= 75 ? "ok" : adh.pct >= 50 ? "warnc" : "bad";
+      html += '<div class="card"><div style="display:flex;justify-content:space-between"><b>Adhärenz (14 Tage)</b>' +
+        '<span class="pill ' + adhCls + '">' + adh.pct + '%</span></div>' +
+        '<div class="muted" style="margin-top:4px">' + adh.inRange + ' von ' + adh.logged + ' Tagen im Zielbereich (±8%). Sinkende Konstanz erscheint rot.</div></div>';
+    }
+
+    // calorie history chart with plan line
+    var kcals = nlog.map(function (e) { return e.kcal; });
+    html += '<div class="card"><b>Kalorien-Verlauf</b>' + lineChart(kcals, nlog.map(function (e) { return e.date.slice(5); }), "#30D158") +
+      '<div class="muted">Plan: ' + n.cal + ' kcal</div></div>';
+
+    // body comp projection
+    if (proj) {
+      var fatCls = proj.avgSurplus <= 250 ? "ok" : proj.avgSurplus <= 450 ? "warnc" : "bad";
+      html += '<div class="card"><b>Körperkomposition (Schätzung aus Energiebilanz)</b>' +
+        '<div style="margin-top:8px;display:flex;justify-content:space-between"><span class="muted">Ø Überschuss/Tag</span><span class="' + fatCls + '" style="font-weight:600">' + (proj.avgSurplus >= 0 ? "+" : "") + proj.avgSurplus + ' kcal</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span class="muted">geschätzt Fett</span><span class="' + fatCls + '">' + (proj.fatKg >= 0 ? "+" : "") + proj.fatKg.toFixed(2) + ' kg</span></div>' +
+        '<div style="display:flex;justify-content:space-between"><span class="muted">geschätzt fettfrei</span><span class="ok">' + (proj.leanKg >= 0 ? "+" : "") + proj.leanKg.toFixed(2) + ' kg</span></div>' +
+        (proj.avgSurplus > 450 ? '<div class="warn" style="margin-top:8px">Hoher Überschuss → steigende Fettaufbau-Tendenz. Überschuss senken, wenn Ziel „minimal Fett" ist.</div>' : '') +
+        '<div class="muted" style="margin-top:6px">Grobe Schätzung über ' + proj.days + ' Tage. Echte Körperkomposition schwankt (Wasser, Glykogen) – nur als Tendenz lesen.</div></div>';
+    }
+  }
+
+  // Volume table (direct) — RP / Israetel style
+  html += '<h2>Wochenvolumen (direkt) – Sätze/Woche</h2>';
+  html += volumeTableHtml("direct");
+
+  // Volume table (fractional)
+  html += '<h2>Wochenvolumen (fraktioniert)</h2>';
+  html += '<div class="muted" style="margin-bottom:6px">Indirekte Beteiligung mitgezählt: z.B. Bankdrücken = 1 Satz Brust + 0,5 Trizeps + 0,33 Schulter.</div>';
+  html += volumeTableHtml("fractional");
+
+  // Niveau + Perzentil per lift
+  html += '<h2>Niveau & Perzentil (Iststand)</h2>';
+  lifts.forEach(function (p) {
+    var cur = e1rmFor(p[0]);
+    var lvl = levelFor(p[0], cur);
+    var pct = percentileFor(p[0], cur);
+    html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<b>' + p[1] + '</b><span class="muted">' + (cur != null ? cur + ' kg' : 'noch keine Daten') + '</span></div>';
+    if (cur != null) {
+      html += '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="color:#30D158;font-weight:600">' + lvl + '</span>' +
+        '<span class="muted">stärker als ≈ ' + pct + '%</span></div>';
+    }
+    html += '</div>';
+  });
+
+  // archetype curves
+  html += '<h2>Deine Entwicklung vs. Lifter-Typen</h2>';
+  html += '<div class="muted" style="margin-bottom:6px">Kumulativer e1RM-Zuwachs über die Wochen, verglichen mit 4 Lifter-Typen. Elite plateaut spät; Anfänger springt früh, flacht dann ab.</div>';
+  lifts.forEach(function (p) {
+    var scale = { squat: 1.0, hinge: 1.2, push: 0.6 }[p[0]] || 1.0;
+    var yourC = yourCumulative(p[0], 16), weeksShown = 16;
+    html += '<div class="card"><b>' + p[1] + '</b>';
+    var elite = archetypeCurve("elite", weeksShown, scale);
+    var yMax = Math.max(elite[weeksShown], Math.max.apply(null, yourC.filter(function (x) { return x != null; }).concat([1])));
+    var W = 320, H = 170, padL = 28, padB = 18, padT = 12, padR = 8;
+    var plotW = W - padL - padR, plotH = H - padB - padT;
+    var px = function (w) { return padL + (w / weeksShown) * plotW; };
+    var py = function (val) { return padT + plotH - (val / yMax) * plotH; };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="margin-top:6px">';
+    for (var gi = 0; gi <= 3; gi++) {
+      var yy = padT + gi * plotH / 3, lab = Math.round(yMax - gi * yMax / 3);
+      svg += '<line x1="' + padL + '" y1="' + yy + '" x2="' + (W - padR) + '" y2="' + yy + '" stroke="#E2E8E9"/>';
+      svg += '<text x="' + (padL - 4) + '" y="' + (yy + 3) + '" font-size="8" fill="#67757B" text-anchor="end">+' + lab + '</text>';
+    }
+    [0, 4, 8, 12, 16].forEach(function (w) { svg += '<text x="' + px(w) + '" y="' + (H - 5) + '" font-size="8" fill="#67757B" text-anchor="middle">W' + w + '</text>'; });
+    ARCHETYPES.forEach(function (a) {
+      var c = archetypeCurve(a.type, weeksShown, scale);
+      svg += '<polyline points="' + c.map(function (val, w) { return px(w) + "," + py(val); }).join(" ") + '" fill="none" stroke="' + a.color + '" stroke-width="1.3" opacity="0.55"/>';
+    });
+    var yourPts = [];
+    yourC.forEach(function (val, w) { if (val != null) yourPts.push(px(w) + "," + py(val)); });
+    if (yourPts.length >= 2) {
+      svg += '<polyline points="' + yourPts.join(" ") + '" fill="none" stroke="#101619" stroke-width="2.5"/>';
+      var last = yourPts[yourPts.length - 1].split(",");
+      svg += '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" fill="#101619"/>';
+    }
+    svg += '</svg>';
+    html += svg;
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">';
+    ARCHETYPES.forEach(function (a) { html += '<span class="muted" style="font-size:11px"><span style="display:inline-block;width:10px;height:3px;background:' + a.color + ';vertical-align:middle"></span> ' + a.label + '</span>'; });
+    html += '<span class="muted" style="font-size:11px"><span style="display:inline-block;width:10px;height:3px;background:#101619;vertical-align:middle"></span> <b>Du</b></span></div>';
+    if (yourPts.length < 2) html += '<div class="muted" style="margin-top:4px">Ab 2 Einheiten in verschiedenen Wochen erscheint deine Kurve.</div>';
+    html += '</div>';
+  });
+
+  // gain rate breakdown
+  html += '<h2>Kraftzuwachs-Rate</h2><div class="card"><table><tr><th>Lift</th><th>/Woche</th><th>/Monat</th><th>/Jahr*</th></tr>';
+  lifts.forEach(function (p) {
+    var g = gainRate(p[0]);
+    if (!g) { html += '<tr><td>' + p[1] + '</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>'; return; }
+    html += '<tr><td>' + p[1] + '</td><td class="n">' + (g.week >= 0 ? "+" : "") + g.week.toFixed(1) + '</td>' +
+      '<td class="n">' + (g.month >= 0 ? "+" : "") + g.month.toFixed(1) + '</td>' +
+      '<td class="n">' + (g.month * 12 >= 0 ? "+" : "") + (g.month * 12).toFixed(0) + '</td></tr>';
+  });
+  html += '</table><div class="muted" style="margin-top:6px">*Jahres-Hochrechnung, real flacht die Kurve ab.</div></div>';
+
+  html += '<div class="warn" style="border-color:#E2E8E9;color:#67757B">Typen-Kurven & Volumen-Landmarken sind Modelle/Richtwerte zur Orientierung, keine exakte Wissenschaft. Deine eigenen Kurven sind echt.</div>';
+
+  app.innerHTML = html;
+  navHtml();
+}
+function volumeTableHtml(mode) {
+  var vol = weeklyVolume(mode);
+  var muscles = Object.keys(LANDMARKS);
+  var rows = "";
+  muscles.forEach(function (mus) {
+    var sets = vol[mus] || 0;
+    if (mode === "direct" && sets === 0 && !DIRECT_HAS(mus)) return;
+    var lm = LANDMARKS[mus];
+    var st = volStatus(sets, lm);
+    rows += '<tr><td>' + (MUSCLE_DE[mus] || mus) + '</td>' +
+      '<td class="n">' + (Math.round(sets * 10) / 10) + '</td>' +
+      '<td class="n" style="color:' + st.color + '">' + st.label + '</td>' +
+      '<td class="n muted" style="font-size:11px">' + lm.mev + '/' + lm.mav + '/' + lm.mrv + '</td></tr>';
+  });
+  if (!rows) rows = '<tr><td colspan="4" class="muted">Noch keine Einheit geloggt.</td></tr>';
+  return '<div class="card"><table><tr><th>Muskel</th><th>Sätze</th><th>Status</th><th>MEV/MAV/MRV</th></tr>' + rows + '</table></div>';
+}
+function nutRow(name, plan, actual) {
+  var d = (actual != null && plan != null) ? actual - plan : null;
+  var cls = "muted";
+  if (d != null) { var pct = Math.abs(d) / (plan || 1); cls = pct <= 0.05 ? "ok" : pct <= 0.12 ? "warnc" : "bad"; }
+  return '<tr><td>' + name + '</td><td class="n">' + (plan != null ? plan : "–") + '</td>' +
+    '<td class="n">' + (actual != null ? actual : "–") + '</td>' +
+    '<td class="n ' + cls + '">' + (d != null ? (d >= 0 ? "+" : "") + Math.round(d) : "–") + '</td></tr>';
+}
+function DIRECT_HAS(mus) {
+  return Object.keys(DIRECT_MUSCLE).some(function (k) { return DIRECT_MUSCLE[k] === mus; });
+}
+
+/* ---------- review scheduling (micro/meso/macro) ---------- */
+function reviewStatus() {
+  var done = (trend.sessions || []).length;
+  var lastMeso = trend.lastMesoReview || 0;   // session count at last meso review
+  var lastMacro = trend.lastMacroReview || 0;
+  return {
+    sessions: done,
+    mesoDue: done >= 4 && (done - lastMeso) >= 4,   // every ~4 sessions (≈ end of a training week / deload)
+    macroDue: done >= 16 && (done - lastMacro) >= 16, // every ~16 sessions (≈ block/quarter)
+    sinceMeso: done - lastMeso,
+    sinceMacro: done - lastMacro
+  };
+}
+function renderReviewSurvey(kind) {
+  var app = document.getElementById("app");
+  var title = kind === "macro" ? "Makro-Review (Block-Rückblick)" : "Meso-Review (4-Wochen-Check)";
+  var html = headerHtml() + '<h2>' + title + '</h2>';
+  html += '<div class="card"><div class="muted">Kurzer Fragebogen. Deine geloggten Daten (e1RM, Volumen, Schmerz, RPE) werden automatisch mit ausgewertet. Danach bekommst du konkrete Anpassungsvorschläge – du entscheidest selbst, was du übernimmst.</div></div>';
+  html += '<div class="card">' +
+    slider("q_recovery", "Erholung zwischen Einheiten (1 schlecht – 5 top)", 1, 5, 3) +
+    slider("q_joint", "Gelenk-/Sehnengesundheit (1 schlecht – 5 top)", 1, 5, 3, "#C0392B") +
+    slider("q_motivation", "Motivation / Trainingslust", 1, 5, 4) +
+    slider("q_sleep", "Schlafqualität im Schnitt", 1, 5, 3) +
+    slider("q_time", "Zeit-/Alltagsbudget fürs Training", 1, 5, 3) +
+    '<label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="q_soreness" style="width:auto"/> Muskelkater hält oft länger als 2 Tage an</label>';
+  if (kind === "macro") {
+    html += '<label>Bist du deinem Hauptziel (schmerzfrei werden) näher gekommen?</label>' +
+      '<select id="q_goal"><option value="yes">Ja, deutlich</option><option value="little" selected>Etwas</option><option value="no">Nein / unverändert</option><option value="worse">Schlechter</option></select>';
+  }
+  html += '<div style="height:12px"></div><button onclick="submitReview(\'' + kind + '\')">Auswerten & Vorschläge zeigen</button></div>';
+  app.innerHTML = html;
+  navHtml();
+}
+window.submitReview = function (kind) {
+  var gi = function (id) { return parseInt(v(id), 10); };
+  var survey = {
+    recovery: gi("q_recovery"), jointHealth: gi("q_joint"), motivation: gi("q_motivation"),
+    sleepAvg: gi("q_sleep"), timeBudget: gi("q_time"),
+    sorenessLingers: document.getElementById("q_soreness") ? document.getElementById("q_soreness").checked : false,
+    goalProgress: v("q_goal") || null
+  };
+  var recs = evaluateBlock(survey);
+  var done = (trend.sessions || []).length;
+  if (kind === "macro") trend.lastMacroReview = done;
+  trend.lastMesoReview = done; // any review resets the meso timer too
+  trend.lastRecs = { date: today(), kind: kind, recs: recs, survey: survey };
+  save("trend", trend);
+  flash("Auswertung erstellt");
+  tab = "stats";
+  render();
+};
+function recommendationsHtml() {
+  var lr = trend.lastRecs;
+  if (!lr) return "";
+  var html = '<h2>Anpassungs-Empfehlungen (' + (lr.kind === "macro" ? "Makro" : "Meso") + ', ' + lr.date + ')</h2>';
+  if (!lr.recs.length) { return html + '<div class="card muted">Keine dringenden Anpassungen – dein aktueller Kurs passt. Weiter so und beim nächsten Review erneut prüfen.</div>'; }
+  var byCat = {};
+  lr.recs.forEach(function (r) { (byCat[r.cat] = byCat[r.cat] || []).push(r); });
+  Object.keys(byCat).forEach(function (cat) {
+    html += '<div class="card"><div style="font-weight:600;margin-bottom:6px">' + cat + '</div>';
+    byCat[cat].forEach(function (r) {
+      html += '<div style="margin-bottom:8px"><span style="display:inline-block;font-size:11px;background:#30D158;color:#fff;padding:1px 7px;border-radius:10px">' + r.dir + '</span> ' +
+        '<div style="font-size:13px;margin-top:3px">' + r.detail + '</div>' +
+        '<div class="muted" style="font-size:12px;margin-top:2px">Warum: ' + r.why + '</div></div>';
+    });
+    html += '</div>';
+  });
+  html += '<div class="warn" style="border-color:#E2E8E9;color:#67757B">Das sind Vorschläge auf Basis deiner Daten + etablierter Trainingsprinzipien – kein Ersatz für ärztliche/physiotherapeutische Beurteilung. Du entscheidest, was du umsetzt.</div>';
+  return html;
+}
+
+/* ---------- PROFILE ---------- */
+function renderProfile() {
+  var app = document.getElementById("app");
+  var html = headerHtml() + '<h2>Profil</h2><div class="card">' +
+    '<label>Körpergewicht (kg)</label><input id="p_w" type="number" value="' + profile.weightKg + '"/>' +
+    '<label>Körperfett (%)</label><input id="p_bf" type="number" value="' + profile.bf + '"/>' +
+    '<label>Ziel-Zunahmerate</label><select id="p_rate">' +
+    ['conservative:Konservativ', 'moderate:Moderat', 'aggressive:Ambitioniert'].map(function (o) {
+      var parts = o.split(":"); return '<option value="' + parts[0] + '"' + (profile.rate === parts[0] ? ' selected' : '') + '>' + parts[1] + '</option>';
+    }).join("") + '</select>' +
+    '<label>Eigene Kalorien (überschreibt Rate, optional)</label><input id="p_cal" type="number" value="' + (profile.manualCal || "") + '" placeholder="z.B. 3000"/>' +
+    '<div style="height:12px"></div><button onclick="saveProfile()">Speichern</button>' +
+    '</div>';
+  html += '<h2>Datensicherung</h2><div class="card">' +
+    '<button class="ghost" onclick="exportData()">Backup exportieren</button>' +
+    '<div style="height:8px"></div>' +
+    '<button class="ghost small" onclick="document.getElementById(\'imp\').click()">Backup laden</button>' +
+    '<input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)"/>' +
+    '<div class="muted" style="margin-top:8px">Deine Daten liegen dauerhaft auf diesem Gerät. Exportiere ab und zu ein Backup als Sicherung.</div></div>';
+  app.innerHTML = html;
+  navHtml();
+}
+window.saveProfile = function () {
+  profile.weightKg = parseFloat(v("p_w")) || profile.weightKg;
+  profile.bf = parseFloat(v("p_bf")) || profile.bf;
+  profile.rate = v("p_rate");
+  var mc = parseFloat(v("p_cal")); profile.manualCal = mc > 0 ? mc : null;
+  save("profile", profile);
+  flash("Profil gespeichert");
+  render();
+};
+window.exportData = function () {
+  var all = {};
+  for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf("il_") === 0) all[k] = localStorage.getItem(k); }
+  var blob = new Blob([JSON.stringify({ app: "IronLedger", date: today(), data: all }, null, 2)], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url; a.download = "ironledger-backup-" + today() + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  flash("Backup exportiert");
+};
+window.importData = function (ev) {
+  var file = ev.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      var obj = JSON.parse(reader.result);
+      if (!obj.data) throw new Error("Ungültige Datei");
+      Object.keys(obj.data).forEach(function (k) { localStorage.setItem(k, obj.data[k]); });
+      alert("Backup geladen. App wird neu geladen.");
+      location.reload();
+    } catch (e) { alert("Fehler: " + e.message); }
+  };
+  reader.readAsText(file);
+};
+
+/* ---------- NAV + ROUTER ---------- */
+function navHtml() {
+  var tabs = [["today", "Heute"], ["log", "Eintragen"], ["progress", "Verlauf"], ["stats", "Statistik"], ["profile", "Profil"]];
+  document.getElementById("nav").innerHTML = tabs.map(function (t) {
+    return '<button class="' + (tab === t[0] ? "active" : "") + '" onclick="go(\'' + t[0] + '\')">' + t[1] + '</button>';
+  }).join("");
+}
+window.go = function (t) { tab = t; render(); };
+function render() {
+  // refresh state from storage
+  checkinToday = load("checkin_" + today(), null);
+  workoutToday = load("workout_" + today(), null);
+  if (!profile) { renderSetup(); return; }
+  if (tab === "today") renderToday();
+  else if (tab === "log") renderLog();
+  else if (tab === "progress") renderProgress();
+  else if (tab === "stats") renderStats();
+  else if (tab === "profile") renderProfile();
+}
+
+/* ---------- boot ---------- */
+try {
+  render();
+} catch (e) {
+  document.getElementById("app").innerHTML = '<div style="padding:20px;color:#C0392B;font-family:monospace">FEHLER: ' + (e && e.message ? e.message : e) + '</div>';
+}
+</script>
+</body>
+</html>
