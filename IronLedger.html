@@ -19,7 +19,6 @@
 </style>
 <script id="lib-react" src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script id="lib-reactdom" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script id="lib-recharts" src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js" crossorigin></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script id="lib-babel" src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
@@ -39,10 +38,9 @@
   });
   // Track real load/error events per script instead of guessing with a fixed timer.
   // This works correctly even on slow mobile connections.
-  var LIBS = ['lib-react', 'lib-reactdom', 'lib-recharts', 'lib-babel'];
+  var LIBS = ['lib-react', 'lib-reactdom', 'lib-babel'];
   var status = {};
   var failed = [];
-  var loadStart = Date.now();
   function checkDone() {
     var allSettled = LIBS.every(function (id) { return status[id]; });
     var progressEl = document.getElementById('boot-progress');
@@ -50,12 +48,9 @@
       var doneCount = LIBS.filter(function (id) { return status[id]; }).length;
       progressEl.textContent = '(' + doneCount + '/' + LIBS.length + ')';
     }
-    if (allSettled) {
-      if (failed.length) {
-        var el = document.getElementById('boot-status');
-        if (el) el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">Diese Skripte konnten nicht geladen werden:\n' + failed.join(', ') + '\n\nMögliche Ursache: Internetverbindung oder CDN blockiert. Bitte Seite neu laden (evtl. mehrmals) oder später erneut versuchen.</div>';
-      }
-      // If all succeeded, the mount script further below will replace #root content.
+    if (allSettled && failed.length) {
+      var el = document.getElementById('boot-status');
+      if (el) el.innerHTML = '<div style="font-family:monospace;white-space:pre-wrap;padding:20px;color:#C0392B;background:#fff;">Diese Skripte konnten nicht geladen werden:\n' + failed.join(', ') + '\n\nMögliche Ursache: Internetverbindung oder CDN blockiert. Bitte Seite neu laden (evtl. mehrmals) oder später erneut versuchen.</div>';
     }
   }
   LIBS.forEach(function (id) {
@@ -96,8 +91,91 @@ const CalendarDays = mkIcon(["M8 2v4", "M16 2v4", "M3 10h18", "M5 4h14a2 2 0 0 1
 const Target = mkIcon(["M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0-20 0", "M12 12m-6 0a6 6 0 1 0 12 0a6 6 0 1 0-12 0", "M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"]);
 const ListChecks = mkIcon(["m3 17 2 2 4-4", "m3 7 2 2 4-4", "M13 6h8", "M13 12h8", "M13 18h8"]);
 
-// ---- Recharts from UMD global ----
-const { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer } = Recharts;
+// ---- Lightweight built-in charts (no external library — avoids CDN fragility) ----
+function MiniLineChart({ series, width = 320, height = 160, yDomain, xLabels }) {
+  const pad = { top: 10, right: 10, bottom: 24, left: 34 };
+  const w = width - pad.left - pad.right;
+  const h = height - pad.top - pad.bottom;
+  const allVals = series.flatMap((s) => s.values.filter((v) => v != null));
+  const yMin = yDomain ? yDomain[0] : Math.min(...allVals);
+  const yMax = yDomain ? yDomain[1] : Math.max(...allVals);
+  const yRange = yMax - yMin || 1;
+  const n = series[0]?.values.length || 0;
+  const xStep = n > 1 ? w / (n - 1) : 0;
+  const px = (i) => pad.left + i * xStep;
+  const py = (v) => pad.top + h - ((v - yMin) / yRange) * h;
+  const gridLines = 4;
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+      {Array.from({ length: gridLines + 1 }, (_, i) => {
+        const y = pad.top + (h / gridLines) * i;
+        const val = yMax - (yRange / gridLines) * i;
+        return (
+          <g key={i}>
+            <line x1={pad.left} y1={y} x2={pad.left + w} y2={y} stroke="#E2E8E9" strokeWidth="1" />
+            <text x={pad.left - 6} y={y + 3} fontSize="9" fill="#67757B" textAnchor="end">{Math.round(val * 10) / 10}</text>
+          </g>
+        );
+      })}
+      {(xLabels || []).map((lbl, i) => {
+        if (n > 6 && i % Math.ceil(n / 6) !== 0) return null;
+        return <text key={i} x={px(i)} y={height - 6} fontSize="9" fill="#67757B" textAnchor="middle">{lbl}</text>;
+      })}
+      {series.map((s, si) => {
+        const pts = s.values.map((v, i) => (v == null ? null : `${px(i)},${py(v)}`)).filter(Boolean).join(" ");
+        return (
+          <g key={si}>
+            <polyline points={pts} fill="none" stroke={s.color || "#0F7B6F"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            {s.values.map((v, i) => (v == null ? null : <circle key={i} cx={px(i)} cy={py(v)} r="2.5" fill={s.color || "#0F7B6F"} />))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+function ChartLegend({ series }) {
+  if (series.length < 2) return null;
+  return (
+    <div className="flex gap-3 justify-center mt-1">
+      {series.map((s, i) => (
+        <div key={i} className="flex items-center gap-1 tiny muted">
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: "inline-block" }} />
+          {s.name}
+        </div>
+      ))}
+    </div>
+  );
+}
+function BellCurveChart({ pts, bands, userGain, width = 320, height = 170 }) {
+  const pad = { top: 14, right: 10, bottom: 24, left: 10 };
+  const w = width - pad.left - pad.right;
+  const h = height - pad.top - pad.bottom;
+  const xMax = 9;
+  const yMax = Math.max(...pts.map((p) => p.y)) || 1;
+  const px = (x) => pad.left + (x / xMax) * w;
+  const py = (y) => pad.top + h - (y / yMax) * h;
+  const linePts = pts.map((p) => `${px(p.x)},${py(p.y)}`).join(" ");
+  const areaPts = `${px(0)},${py(0)} ` + linePts + ` ${px(xMax)},${py(0)}`;
+  return (
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+      <polygon points={areaPts} fill="#67757B" opacity="0.12" />
+      <polyline points={linePts} fill="none" stroke="#67757B" strokeWidth="1.5" />
+      {bands.map((b, i) => {
+        if (b.hi >= xMax) return null;
+        return <line key={i} x1={px(b.hi)} y1={pad.top} x2={px(b.hi)} y2={pad.top + h} stroke="#E2E8E9" strokeWidth="1" />;
+      })}
+      {[0, 1.5, 3.5, 6, 9].map((v, i) => (
+        <text key={i} x={px(v)} y={height - 8} fontSize="9" fill="#67757B" textAnchor="middle">{v}</text>
+      ))}
+      {userGain != null && (
+        <g>
+          <line x1={px(Math.min(xMax, userGain))} y1={pad.top} x2={px(Math.min(xMax, userGain))} y2={pad.top + h} stroke="#0F7B6F" strokeWidth="2" />
+          <text x={px(Math.min(xMax, userGain))} y={pad.top - 3} fontSize="10" fill="#0F7B6F" textAnchor="middle" fontWeight="600">Du</text>
+        </g>
+      )}
+    </svg>
+  );
+}
 const { useState, useEffect } = React;
 
 
@@ -1613,25 +1691,7 @@ function GeneticBell({ history, sessionsDone }) {
     <section>
       <div className="text-xs uppercase tracking-wide muted mb-2">Reaktions-Einordnung — wie schnell du zulegst</div>
       <div className="bg-card border hairline rounded p-3">
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={bell.pts} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-            <defs>
-              {RESPONSE_BANDS.map((b, i) => (
-                <linearGradient key={i} id={"g" + i} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={b.color} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={b.color} stopOpacity={0.05} />
-                </linearGradient>
-              ))}
-            </defs>
-            <XAxis dataKey="x" type="number" domain={[0, 9]} stroke="#67757B" fontSize={10} ticks={[0, 1.5, 3.5, 6, 9]} tickFormatter={(v) => v + ""} label={{ value: "kg/Monat e1RM", position: "insideBottom", offset: -4, fontSize: 10, fill: "#67757B" }} />
-            <YAxis hide domain={[0, 1.1]} />
-            {RESPONSE_BANDS.map((b, i) => (
-              <ReferenceLine key={i} x={b.hi} stroke="#E2E8E9" />
-            ))}
-            <Area type="monotone" dataKey="y" stroke="#67757B" strokeWidth={1.5} fill="url(#g1)" />
-            {userGain != null && <ReferenceLine x={Math.min(9, userGain)} stroke={cls.color} strokeWidth={2} label={{ value: "Du", position: "top", fontSize: 11, fill: cls.color }} />}
-          </AreaChart>
-        </ResponsiveContainer>
+        <BellCurveChart pts={bell.pts} bands={RESPONSE_BANDS} userGain={userGain} />
         <div className="grid grid-cols-4 gap-1 mt-1">
           {RESPONSE_BANDS.map((b) => (
             <div key={b.label} className="text-center">
@@ -1662,15 +1722,7 @@ function WeightTrendSection({ trendlog }) {
       <div className="text-xs uppercase tracking-wide muted mb-2">Gewichtstrend</div>
       {data.length >= 2 ? (
         <div className="bg-card border hairline rounded p-3">
-          <ResponsiveContainer width="100%" height={170}>
-            <LineChart data={data}>
-              <CartesianGrid stroke="#E2E8E9" />
-              <XAxis dataKey="date" stroke="#67757B" fontSize={11} />
-              <YAxis domain={["dataMin - 1", "dataMax + 1"]} stroke="#67757B" fontSize={11} tickFormatter={(v) => v.toFixed(1)} />
-              <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E2E8E9" }} />
-              <Line type="monotone" dataKey="kg" stroke="#0F7B6F" strokeWidth={2} dot={{ r: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <MiniLineChart series={[{ values: data.map((d) => d.kg), color: "#0F7B6F" }]} xLabels={data.map((d) => d.date)} />
           {trend && (
             <div className="text-xs muted mt-1">
               Gleitender Trend: <span className="mono" style={{ color: trend.kgPerWeek >= 0 ? "#0F7B6F" : "#C0392B" }}>{trend.kgPerWeek >= 0 ? "+" : ""}{trend.kgPerWeek.toFixed(2)} kg/Woche</span> aus {trend.points} Wiegungen (nutzt gemittelte Fenster, nicht Tagesrauschen).
@@ -1727,18 +1779,18 @@ function ProgressTab({ history, trendlog }) {
       <section>
         <div className="text-xs uppercase tracking-wide muted mb-2">Schmerzverlauf unter Belastung (NRS 0–10)</div>
         {painData.length >= 2 ? (
-          <ResponsiveContainer width="100%" height={170}>
-            <LineChart data={painData}>
-              <CartesianGrid stroke="#E2E8E9" />
-              <XAxis dataKey="date" stroke="#67757B" fontSize={11} />
-              <YAxis domain={[0, 10]} stroke="#67757B" fontSize={11} />
-              <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E2E8E9" }} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="Schulter" stroke="#C0392B" strokeWidth={2} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="Knie" stroke="#B27A00" strokeWidth={2} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="Nacken" stroke="#67757B" strokeWidth={2} dot={{ r: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <>
+            <MiniLineChart
+              series={[
+                { name: "Schulter", color: "#C0392B", values: painData.map((d) => d.Schulter) },
+                { name: "Knie", color: "#B27A00", values: painData.map((d) => d.Knie) },
+                { name: "Nacken", color: "#67757B", values: painData.map((d) => d.Nacken) },
+              ]}
+              xLabels={painData.map((d) => d.date)}
+              yDomain={[0, 10]}
+            />
+            <ChartLegend series={[{ name: "Schulter", color: "#C0392B" }, { name: "Knie", color: "#B27A00" }, { name: "Nacken", color: "#67757B" }]} />
+          </>
         ) : (
           <div className="text-xs muted">Ab 2 Check-ins entsteht hier dein Schmerz-Trend.</div>
         )}
@@ -1752,15 +1804,7 @@ function ProgressTab({ history, trendlog }) {
           <section key={p.key}>
             <div className="text-xs uppercase tracking-wide muted mb-2">{p.label}</div>
             {data.length ? (
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={data}>
-                  <CartesianGrid stroke="#E2E8E9" />
-                  <XAxis dataKey="date" stroke="#67757B" fontSize={11} />
-                  <YAxis stroke="#67757B" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "#FFFFFF", border: "1px solid #E2E8E9" }} />
-                  <Line type="monotone" dataKey="e1rm" stroke="#0F7B6F" strokeWidth={2} dot={{ r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
+              <MiniLineChart series={[{ values: data.map((d) => d.e1rm), color: "#0F7B6F" }]} xLabels={data.map((d) => d.date)} />
             ) : (
               <div className="text-xs muted">Noch keine Daten geloggt.</div>
             )}
