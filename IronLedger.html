@@ -21,6 +21,7 @@
 <script id="lib-reactdom" src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script id="lib-babel" src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" />
 </head>
 <body>
 <div id="root">
@@ -1024,9 +1025,8 @@ function IronLedger() {
   return (
     <div className="min-h-screen bg-paper ink" style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-        .display { font-family: 'IBM Plex Sans Condensed', sans-serif; letter-spacing: 0.04em; }
-        .mono { font-family: 'IBM Plex Mono', monospace; }
+        .display { font-family: 'IBM Plex Sans Condensed', system-ui, sans-serif; letter-spacing: 0.04em; }
+        .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
         :root { color-scheme: light; }
         .bg-paper { background: #F6F8F8; }
         .bg-card { background: #FFFFFF; }
@@ -1939,7 +1939,6 @@ if ("serviceWorker" in navigator) {
   const blob = new Blob([swCode], { type: "application/javascript" });
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
-</script>
 </script>
 </body>
 </html>
